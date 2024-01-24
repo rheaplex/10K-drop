@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 210 297"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.3.2 (091e20ef0f, 2023-11-25)"
+   sodipodi:docname="k-fn.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="1.0378437"
+     inkscape:cx="396.49515"
+     inkscape:cy="561.25984"
+     inkscape:window-width="2560"
+     inkscape:window-height="1371"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       style="font-weight:bold;font-size:25.4px;line-height:1;font-family:'Helvetica Now Text';-inkscape-font-specification:'Helvetica Now Text, Bold';text-align:center;text-anchor:middle;fill:none;stroke:#ffffff;stroke-width:10.4778;stroke-linecap:round;stroke-linejoin:round"
+       d="M 133.40105,105.93841 H 109.63743 L 88.137015,129.32482 77.952608,140.5151 V 105.93841 H 59.344061 v 89.52219 h 18.608547 v -32.81642 l 8.424139,-8.29841 28.164283,41.11483 h 23.00922 L 99.453023,141.89817 Z"
+       id="text1"
+       aria-label="K" />
+  </g>
+</svg>
