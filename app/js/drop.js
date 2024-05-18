@@ -1,20 +1,30 @@
 // module aliases
-var Engine = Matter.Engine,
-    Render = Matter.Render,
-    Runner = Matter.Runner,
-    Common = Matter.Common,
-    Bodies = Matter.Bodies,
-    Body   = Matter.Body,
-    Composite = Matter.Composite,
-    Vertices = Matter.Vertices,
-    Svg = Matter.Svg;
+const Engine = Matter.Engine,
+      Render = Matter.Render,
+      Runner = Matter.Runner,
+      Common = Matter.Common,
+      Bodies = Matter.Bodies,
+      Body   = Matter.Body,
+      Composite = Matter.Composite,
+      Vertices = Matter.Vertices,
+      Svg = Matter.Svg;
 
-// provide concave decomposition support library
-Common.setDecomp(decomp);
+const WIDTH = 800;
+const HEIGHT = 600;
+const VARIANCE_MIN = 10;
+const VARIANCE_MAX = 150;
 
-Common._seed = 4;
+const SCALES = [
+  (i) => 1.9,
+  (i) => 1 + (0.1 * i),
+  (i) => 2 - (0.1 * i),
+  (i) => 0.5 + (Math.random() * 1.5),
+  (i) => 1.0 + (Math.random() * 1.0),
+  (i) => i % 2 == 0 ? 2.0 : 1.0,
+  // Curves up/down.
+];
 
-var k = [[
+const K = [[
   {x: 133.40105, y: 105.93841},
   {x: 109.63743, y: 105.93841},
   {x: 88.137015, y: 129.32482},
@@ -31,52 +41,64 @@ var k = [[
   {x: 133.40105, y: 105.93841},
 ]];
 
+// provide concave decomposition support library
+Common.setDecomp(decomp);
+Common._seed = 4;
+
+const style = genRender();
+const background = genBackground(style);
+
 // create an engine
-var engine = Engine.create();
+const engine = Engine.create();
 
 // create a renderer
-var render = Render.create({
+const render = Render.create({
   element: document.body,
   engine: engine,
   options: {
-    background: "#ffffff",
+    background: background,
     wireframes: false
   }
 });
 
-var ks = [];
-for(var i = 0; i < 10; i++) {
-  var s = Bodies.fromVertices(400, 200 - (i * 200), k, {
-  render: {
-    fillStyle: '#ff0000',
-    strokeStyle: '#ff0000',
-    lineWidth: 1
-  }}, true);
-  var scale = 1.9;// - (i * 0.1);
+const ks = [];
+const scaleFun = pick(SCALES);
+const xVariance = VARIANCE_MIN + (Math.random() * (VARIANCE_MAX - VARIANCE_MIN));
+for(let i = 0; i < 10; i++) {
+  const s = Bodies.fromVertices(
+    200 + (Math.random() * xVariance),
+    -100 - (i * 200),
+    K,
+    {
+      render: style
+    },
+    true
+  );
+  const scale = scaleFun(i);
   Body.scale(s, scale, scale);
   ks.push(s);
 }
 
-var ground = [
+const ground = [
   // Base
-  Bodies.rectangle(400, 610, 810, 60, {
+  Bodies.rectangle(WIDTH / 2, HEIGHT + 1, WIDTH, style.lineWidth, {
     isStatic: true,
     render: {
-      fillStyle: '#ffffff'
+      opacity: 0
     }
   }),
   // Left
-  Bodies.rectangle(0, 0, 1, 9999, {
+  Bodies.rectangle(-1, 0, 1, 9999, {
     isStatic: true,
     render: {
-      fillStyle: '#ffffff'
+      opacity: 0
     }
   }),
   // Right
-  Bodies.rectangle(804, 0, 10, 9999, {
+  Bodies.rectangle(WIDTH + 1, 0, 1, 9999, {
     isStatic: true,
     render: {
-      fillStyle: '#ffffff'
+      opacity: 0
     }
   }),
 ];
@@ -89,7 +111,7 @@ Composite.add(engine.world, ground);
 Render.run(render);
 
 // create runner
-var runner = Runner.create();
+const runner = Runner.create();
 
 // run the engine
 Runner.run(runner, engine);
