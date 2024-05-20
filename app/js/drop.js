@@ -24,7 +24,34 @@ const SCALES = [
   // Curves up/down.
 ];
 
-const K = [[
+const boundsAndOffset = (points) => {
+  let xMin = 999999;
+  let xMax = -999999;
+  let yMin = 999999;
+  let yMax = -999999;
+  for (const p of points) {
+    if (p.x < xMin) {
+      xMin = p.x;
+    } else if (p.x > xMax) {
+      xMax = p.x;
+    }
+    if (p.y < yMin) {
+      yMin = p.y;
+    } else if (p.y > yMax) {
+      yMax = p.y;
+    }
+  }
+  const xOffset = xMin + ((xMax - xMin) / 2);
+  const yOffset = yMin + ((yMax - yMin) / 2);
+  return [xMin, xMax, yMin, yMax, xOffset, yOffset];
+};
+
+const centrePoints = (points) => {
+  const [xMin, xMax, yMin, yMax, xOffset, yOffset] = boundsAndOffset(points);
+  return points.map(p => { return {x: p.x - xOffset, y: p.y - yOffset }; });
+};
+
+const K = [centrePoints([
   {x: 133.40105, y: 105.93841},
   {x: 109.63743, y: 105.93841},
   {x: 88.137015, y: 129.32482},
@@ -39,67 +66,51 @@ const K = [[
   {x: 137.55025, y: 195.4606},
   {x: 99.453023, y: 141.89817},
   {x: 133.40105, y: 105.93841},
-]];
+])];
+console.log(K);
+
+const [xMin, xMax, yMin, yMax, xOffset, yOffset] = boundsAndOffset(K[0]);
 
 // provide concave decomposition support library
 Common.setDecomp(decomp);
 Common._seed = 4;
 
 const style = genRender();
-const background = genBackground(style);
+const BACKGROUND = genBackground(style);
 
 // create an engine
 const engine = Engine.create();
 
-// create a renderer
-const render = Render.create({
-  element: document.body,
-  engine: engine,
-  options: {
-    background: background,
-    wireframes: false
-  }
-});
-
 const ks = [];
+const scales = [];
 const scaleFun = pick(SCALES);
 const xVariance = VARIANCE_MIN + (Math.random() * (VARIANCE_MAX - VARIANCE_MIN));
 for(let i = 0; i < 10; i++) {
+  const scale = scaleFun(i);
+  scales[i] = scale;
   const s = Bodies.fromVertices(
     200 + (Math.random() * xVariance),
     -100 - (i * 200),
     K,
-    {
-      render: style
-    },
+    {},
     true
   );
-  const scale = scaleFun(i);
   Body.scale(s, scale, scale);
   ks.push(s);
 }
 
 const ground = [
   // Base
-  Bodies.rectangle(WIDTH / 2, HEIGHT + 1, WIDTH, style.lineWidth, {
-    isStatic: true,
-    render: {
-      opacity: 0
-    }
+  Bodies.rectangle(WIDTH / 2, HEIGHT, WIDTH, style.lineWidth, {
+    isStatic: true
   }),
   // Left
   Bodies.rectangle(-1, 0, 1, 9999, {
-    isStatic: true,
-    render: {
-      opacity: 0
-    }
+    isStatic: true
   }),
   // Right
   Bodies.rectangle(WIDTH + 1, 0, 1, 9999, {
-    isStatic: true,
-    render: {
-      opacity: 0
-    }
+    isStatic: true
   }),
 ];
 
@@ -107,11 +118,47 @@ const ground = [
 Composite.add(engine.world, ks);
 Composite.add(engine.world, ground);
 
-// run the renderer
-Render.run(render);
-
 // create runner
 const runner = Runner.create();
 
 // run the engine
 Runner.run(runner, engine);
+
+function setup() {
+  createCanvas(WIDTH, HEIGHT);
+}
+
+function draw() {
+  background(BACKGROUND);
+  Engine.update(engine, deltaTime);
+  const ks = engine.world.bodies;
+  for (let i = 0; i < ks.length; i++) {
+    const k = ks[i];
+    if (k.label == "Body") {
+      stroke(style.strokeStyle);
+      strokeWeight(style.lineWidth);
+      fill(style.fillStyle);
+      push();
+      //FIXME: Allow for Bodies.fromVertices changing the centre.
+      // https://brm.io/matter-js/docs/classes/Bodies.html#method_fromVertices
+      translate(k.position.x, k.position.y);
+      rotate(k.angle);
+      scale(scales[i]);
+      beginShape();
+      for (const v of K[0]) {
+        vertex(v.x, v.y);
+      }
+      endShape(CLOSE);
+      pop();
+
+      
+      noFill();
+      stroke(0);
+      beginShape();
+      for (const v of k.vertices) {
+        vertex(v.x, v.y);
+      }
+      endShape(CLOSE);
+    }
+  }
+}
