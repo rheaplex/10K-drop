@@ -67,9 +67,10 @@ const K = [centrePoints([
   {x: 99.453023, y: 141.89817},
   {x: 133.40105, y: 105.93841},
 ])];
-console.log(K);
 
-const [xMin, xMax, yMin, yMax, xOffset, yOffset] = boundsAndOffset(K[0]);
+//Allow for Bodies.fromVertices changing the centre.
+// https://brm.io/matter-js/docs/classes/Bodies.html#method_fromVertices
+const centre = Matter.Vertices.centre(K[0]);
 
 // provide concave decomposition support library
 Common.setDecomp(decomp);
@@ -139,26 +140,25 @@ function draw() {
       strokeWeight(style.lineWidth);
       fill(style.fillStyle);
       push();
-      //FIXME: Allow for Bodies.fromVertices changing the centre.
-      // https://brm.io/matter-js/docs/classes/Bodies.html#method_fromVertices
       translate(k.position.x, k.position.y);
       rotate(k.angle);
       scale(scales[i]);
       beginShape();
       for (const v of K[0]) {
-        vertex(v.x, v.y);
+        vertex(v.x - centre.x, v.y - centre.y);
       }
       endShape(CLOSE);
       pop();
-
-      
+      /*
       noFill();
       stroke(0);
+      strokeWeight(1);
       beginShape();
       for (const v of k.vertices) {
         vertex(v.x, v.y);
       }
       endShape(CLOSE);
+      */
     }
   }
 }
