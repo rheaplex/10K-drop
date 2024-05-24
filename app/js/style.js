@@ -1,4 +1,4 @@
-const hue = [
+const HUE = [
   // Black and white
   '#000000',
   '#ff0000',
@@ -165,7 +165,7 @@ const hue = [
   "#ffffff",
 ];
 
-const width = [
+const STROKE_WIDTH = [
   // No 0, we need to cover internal edges
   1,
   2,
@@ -178,12 +178,18 @@ const width = [
   9,
   10,
   12,
-  14,
+  /*14,
   15,
   16,
   18,
-  20
+  20*/
 ];
+
+const LETTER_CASE = ["uppercase", "lowercase"];
+const FONTS = {
+  "Roboto-normal-900": "https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmYUtvAw.ttf",
+  "Merriweather-regular-400": "https://fonts.gstatic.com/s/merriweather/v30/u-440qyriQwlOrhSvowK_l5Oew.ttf"
+};
 
 const MIN_DISTANCE = 16;
 
@@ -203,28 +209,121 @@ const distance = (a, b) => {
 
 const pick = (items) => items[Math.floor(Math.random() * items.length)];
 
-const pickDifferent = (items, exclude) => {
+const pickDifferent = (items, excludes) => {
   const picked = pick(items); //.filter(x => ! exclude.includes(x)));
-  if (distance(picked, exclude) >= MIN_DISTANCE) {
-    return picked;
+  if (typeof(excludes) == 'string') {
+    excludes = [excludes];
   }
-  return pickDifferent(items, exclude);
+  // Not tail recursive ;-(
+  for (const exclude of excludes) {
+    if (distance(picked, exclude) < MIN_DISTANCE) {
+      return pickDifferent(items, exclude);
+    }
+  }
+  return picked;
 };
 
-const genRender = () => {
-  const h = pick(hue);
-  return {
-    fillStyle: h,
-    strokeStyle: h,
-    lineWidth: pick(width)
-  };
+const genBackground = () => {
+  return pick(HUE);
 };
 
-const genBackground = (render) => {
-  const background = pick(hue);
-  const avoid = render.fillStyle;
-  if (distance(background, avoid) >= MIN_DISTANCE) {
-    return background;
+const range = n => [...Array(n).keys()];
+
+const FILL_COLOUR_STRATEGIES = {
+  "same": (background, count) => {
+    return Array(count).fill(pickDifferent(HUE, background));
+  },
+  "half & half": (background, count) => {
+    const first = pickDifferent(HUE, background);
+    return Array(count).fill(first, 0, count / 2)
+      .fill(pickDifferent(HUE, [background, first]), count / 2);
+  },
+  //"alternating",
+  //"gradient",
+  "random": (background, count) => {
+    return range(count).map(() => pickDifferent(HUE, background));
+  },
+  //"two each of five"
+};
+
+const SCALE_MIN = 0.5;
+const SCALE_MAX = 2.0;
+const SCALE_RANGE = SCALE_MAX - SCALE_MIN;
+
+const SCALE_STRATEGIES = {
+  "one": (count) => Array(count).fill(1.0),
+  //"alternating",
+  "half & half": (count) => Array(count).fill(SCALE_MIN + Math.random() * (SCALE_RANGE / 2), 0, count / 2)
+    .fill(SCALE_MAX - Math.random() * (SCALE_RANGE / 2), count / 2),
+  "random": (count) => range(count).map(() => (Math.random() * SCALE_RANGE) + SCALE_MIN),
+  "little to big": (count) => range(count).map(i => SCALE_MIN + i * (SCALE_RANGE / count)),
+  "big to little": (count) => range(count).map(i => SCALE_MAX - i * (SCALE_RANGE / count)),
+};
+
+const STROKE_COLOUR_STRATEGIES = {
+  "none": (background, fills, count) => undefined,
+  "fill colour": (background, fills, count) => fills,
+  "background colour": (background, fills, count) => background,
+  //"alternating":,
+  //"gradient":,
+  "random but not fill or bg":(background, fills, count) => range(count).map(i => pickDifferent(HUE, [background, fills[i]]))
+};
+
+const CASE_STRATEGIES = {
+  "all upper": (count) => Array(count).fill("uppercase"),
+  "all lower": (count) => Array(count).fill("lowercase"),
+  "half and half": (count) => Array(count).fill("uppercase", count / 2)
+    .fill("lowercase", count / 2),
+  "alternating": (count) => Array(count).map(i => i % 2 ? "uppercase": "lowercase"),
+  "random": (count) => range(count).map(i => pick(["uppercase, lowercase"]))
+};
+
+const FONT_STRATEGIES = {
+  "all same": (count) => Array(count).fill(pick(Object.keys(FONTS))),
+  "random": (count) => range(count).map(i => pick(Object.keys(FONTS))),
+  //"alternating":,
+  "half and half": (count) => {
+    const first = pick(Object.keys(FONTS));
+    return Array(count).fill(first, 0, count / 2)
+      .fill(pickDifferent(Object.keys(FONTS), [first]), count / 2);
   }
-  return pickDifferent(hue, avoid);
+};
+
+const genStyles = (backgroundColour, count) => {
+  const fillColourStrategy = pick(Object.keys(FILL_COLOUR_STRATEGIES));
+  const fillColours = FILL_COLOUR_STRATEGIES[fillColourStrategy](backgroundColour, count);
+  const strokeColourStrategy = pick(Object.keys(STROKE_COLOUR_STRATEGIES));
+  const strokeColours = STROKE_COLOUR_STRATEGIES[strokeColourStrategy](backgroundColour, fillColours, count);
+  const strokeWidths = Array(count).fill(pick(STROKE_WIDTH));
+  const scaleStrategy = pick(Object.keys(SCALE_STRATEGIES));
+  const scales = SCALE_STRATEGIES[scaleStrategy](count);
+  const fontStrategy = pick(Object.keys(FONT_STRATEGIES));
+  const fonts = FONT_STRATEGIES[fontStrategy](count);
+  const caseStrategy = pick(Object.keys(CASE_STRATEGIES));
+  const cases = CASE_STRATEGIES[caseStrategy](count);
+  console.log({
+    fill: fillColourStrategy,
+    stroke: strokeColourStrategy,
+    strokeWidth: strokeWidths[0],
+    scale: scaleStrategy,
+    font: fontStrategy,
+    case: caseStrategy
+  });
+  const styles = [];
+  for (let i = 0; i < count; i++) {
+    const style = {
+      fillColour: fillColours[i],
+      scale: scales[i],
+      fontName: fonts[i],
+      case: cases[i]
+    };
+    if (strokeColourStrategy != "none") {
+      style.strokeColour = strokeColours[i];
+      style.strokeWidth = strokeWidths[i];
+    } else {
+      style.strokeColour = false;
+    }
+    styles.push(style);
+  }
+  return styles;
 };
