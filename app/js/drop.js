@@ -14,16 +14,18 @@ let Engine    = Matter.Engine,
 Common.setDecomp(decomp);
 Common._seed = 4;
 
-let WIDTH = 800;
-let HEIGHT = 600;
+let WIDTH = 1600;
+let HEIGHT = 900;
 
 let VARIANCE_MIN = WIDTH / 50;
 let VARIANCE_MAX = WIDTH / 5;
 let VARIANCE = VARIANCE_MAX - VARIANCE_MIN;
 
-let FONT_SIZE_BASE = 200;
+let FONT_SIZE_BASE = HEIGHT / 3;
 
 let NUM_KS = 10;
+
+let RENDER_TIME = 1000 * 12;
 
 let bounds = [
   // Base
@@ -59,114 +61,151 @@ canvas.height = HEIGHT;
 document.body.appendChild(canvas);
 
 let backgroundColour;
+let rendering = true;
+let id = 1;
+let filename;
+let hash;
+let random;
+let engine;
+let recorder;
+
 const fonts = {};
 const ks = [];
 
-// create an engine
-const engine = Engine.create({
-  //constraintIterations: 4,
-  //positionIterations: 12,
-});
+const sha256Hash = async plaintext =>
+      "0x" + Array.from(
+        new Uint8Array(
+          await window.crypto.subtle.digest(
+            "SHA-256",
+            new TextEncoder().encode(plaintext)
+          ))).map((item) => item.toString(16).padStart(2, "0"))
+      .join("");
 
-// MONKEYPATCH OPENTYPEJS
 
-opentype.Glyph.prototype.getPath = function(x, y, fontSize, options, font) {
-    x = x !== undefined ? x : 0;
-    y = y !== undefined ? y : 0;
-    fontSize = fontSize !== undefined ? fontSize : 72;
-    options = Object.assign({}, font && font.defaultRenderOptions, options);
-    let commands;
-    let hPoints;
-    let xScale = options.xScale;
-    let yScale = options.yScale;
-    const scale = 1 / (this.path.unitsPerEm || 1000) * fontSize;
+const saveVideo = async (videoBlob) => {
+  const element = document.createElement('a');
+  element.setAttribute( 'href', URL.createObjectURL(videoBlob));
+  element.setAttribute('download', `${filename}.webm`);
 
-    let useGlyph = this;
+  element.style.display = 'none';
+  document.body.appendChild(element);
 
-    if(font && font.variation) {
-        useGlyph = font.variation.getTransform(this, options.variation);
-        commands = useGlyph.path.commands;
+  element.click();
+  
+  document.body.removeChild(element);
+};
+
+const recordVideo = () => {
+  const chunks = [];
+  const stream = canvas.captureStream(30);
+  recorder = new MediaRecorder(stream);
+  recorder.ondataavailable = e => chunks.push(e.data);
+  recorder.onstop = (e) => {
+    saveVideo(
+      new Blob(
+        chunks,
+        { type: "video/webm;codecs=h264" }
+      )
+    );
+  };
+  recorder.start();
+};
+
+const saveAsPng = () => {
+  const element = document.createElement('a');
+  element.setAttribute( 'href', canvas.toDataURL());
+  element.setAttribute('download', `${filename}.png`);
+
+  element.style.display = 'none';
+  document.body.appendChild(element);
+
+  element.click();
+  
+  document.body.removeChild(element);
+};
+
+const saveSvg = (svgElement) => {
+  const file = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+${encodeURIComponent(svgElement.outerHTML)}`;
+
+  const element = document.createElement('a');
+  element.setAttribute(
+    'href',
+    `data:image/svg+xml;charset=utf-8,${file}`);
+  element.setAttribute('download', `${filename}.svg`);
+
+  element.style.display = 'none';
+  document.body.appendChild(element);
+
+  element.click();
+  
+  document.body.removeChild(element);
+};
+
+function asSvg () {
+  const svg = document.createElementNS(
+    'http://www.w3.org/2000/svg',
+    'svg'
+  );
+  svg.setAttribute('width', `${WIDTH}`);
+  svg.setAttribute('height', `${HEIGHT}`);
+  svg.setAttribute('viewBox', `0 0 ${WIDTH} ${HEIGHT}`);
+  svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  
+  const background = document.createElementNS(
+    'http://www.w3.org/2000/svg',
+    'rect'
+  );
+  background.setAttribute('width', WIDTH);
+  background.setAttribute('height', HEIGHT);
+  background.setAttribute('fill', backgroundColour);
+  background.setAttribute('stroke', 'none');
+  svg.appendChild(background);
+
+  for (const k of ks) {
+    if (! k.body.render.visible) {
+      continue;
     }
-
-    if (options.hinting && font && font.hinting) {
-        // in case of hinting, the hinting engine takes care
-        // of scaling the points (not the path) before hinting.
-        hPoints = useGlyph.path && font.hinting.exec(useGlyph, fontSize, options);
-        // in case the hinting engine failed hPoints is undefined
-        // and thus reverts to plain rending
+    
+    const path = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      'path'
+    );
+    path.setAttribute(
+      'd',
+      k.glyph
+        .getPath(
+          k.offset.x,
+          k.offset.y,
+          k.size,
+          k.options,
+          k.font)
+        .toPathData({
+          decimalPlaces: 2,
+        }));
+    path.setAttribute('fill', k.style.fillColour);
+    if (k.style.strokeColour) {
+      path.setAttribute('stroke', k.style.strokeColour);
+      path.setAttribute('stroke-width', k.style.strokeWidth);
     }
+    // Convert radians to degrees, and flip the y-axis of the glyph.
+    path.setAttribute(
+      'transform',
+      `translate(${k.body.position.x} ${k.body.position.y})
+       rotate(${k.body.angle / (Math.PI / 180)})
+       scale(1 -1)`
+    );
+    svg.appendChild(path);
+  }
 
-    if (hPoints) {
-        // Call font.hinting.getCommands instead of `glyf.getPath(hPoints).commands` to avoid a circular dependency
-        commands = font.hinting.getCommands(hPoints);
-        x = Math.round(x);
-        y = Math.round(y);
-        // TODO in case of hinting xyScaling is not yet supported
-        xScale = yScale = 1;
-    } else {
-        commands = useGlyph.path.commands;
-        if (xScale === undefined) xScale = scale;
-        if (yScale === undefined) yScale = scale;
-    }
+  return svg;
+}
 
-    const p = new opentype.Path();
-    if ( options.drawSVG ) {
-        const svgImage = this.getSvgImage(font);
-        if ( svgImage ) {
-            const layer = new opentype.Path();
-            layer._image = {
-                image: svgImage.image,
-                x: x + svgImage.leftSideBearing * scale,
-                y: y - svgImage.baseline * scale,
-                width: svgImage.image.width * scale,
-                height: svgImage.image.height * scale,
-            };
-            p._layers = [layer];
-            return p;
-        }
-    }
-    if ( options.drawLayers ) {
-        const layers = this.getLayers(font);
-        if ( layers && layers.length ) {
-            p._layers = [];
-            for ( let i = 0; i < layers.length; i += 1 ) {
-                const layer = layers[i];
-                let color = getPaletteColor(font, layer.paletteIndex, options.usePalette);
-
-                if ( color === 'currentColor' ) {
-                    color = options.fill || 'black';
-                } else {
-                    color = formatColor(color, options.colorFormat || 'rgba');
-                }
-                options = Object.assign({}, options, {fill: color});
-                p._layers.push(this.getPath.call(layer.glyph, x, y, fontSize, options, font));
-            }
-            return p;
-        }
-    }
-
-    p.fill = options.fill || this.path.fill;
-    p.stroke = options.stroke || this.path.stroke;
-    p.strokeWidth = options.strokeWidth || this.path.strokeWidth * scale;
-    for (let i = 0; i < commands.length; i += 1) {
-        const cmd = commands[i];
-        if (cmd.type === 'M') {
-            p.moveTo(x + (cmd.x * xScale), y + (-cmd.y * yScale));
-        } else if (cmd.type === 'L') {
-            p.lineTo(x + (cmd.x * xScale), y + (-cmd.y * yScale));
-        } else if (cmd.type === 'Q') {
-            p.quadraticCurveTo(x + (cmd.x1 * xScale), y + (-cmd.y1 * yScale),
-                x + (cmd.x * xScale), y + (-cmd.y * yScale));
-        } else if (cmd.type === 'C') {
-            p.curveTo(x + (cmd.x1 * xScale), y + (-cmd.y1 * yScale),
-                x + (cmd.x2 * xScale), y + (-cmd.y2 * yScale),
-                x + (cmd.x * xScale), y + (-cmd.y * yScale));
-        } else if (cmd.type === 'Z' && p.stroke && p.strokeWidth) {
-            p.closePath();
-        }
-    }
-
-    return p;
+const saveAsSvg = () => {
+  const svg = asSvg();
+  const fileName = "1.svg";
+  saveSvg(svg, fileName);
 };
 
 function renderFun() {
@@ -216,7 +255,10 @@ function renderFun() {
     /*ctx.fillStyle = "#ff00ff";
     ctx.fillRect(k.body.position.x, k.body.position.y, 10, 10);*/
   }
-  window.requestAnimationFrame(renderFun);
+  if (rendering) {
+    window.requestAnimationFrame(renderFun);
+  } else {
+  }
 }
 
 const fetchFont = async (url) => {
@@ -234,7 +276,7 @@ const charGlyph = (font, char, size) => {
   return font.charToGlyph(char, 0, 0, size);
 };
 
-const createBody = (path, x, y, scale, look) => {
+const createBody = (glyph, x, y, scale, look) => {
   const render = {
     fillStyle: look.fillColour
   };
@@ -244,7 +286,7 @@ const createBody = (path, x, y, scale, look) => {
   }
   // We call pathToVertices each time as the results are consumed
   // by the next Vertices function calls..
-  const vertices = Vertices.fromPath(path.toSVG());
+  const vertices = Vertices.fromPath(glyph.toSVG());
   Vertices.scale(vertices, scale, scale);
   //Vertices.clockwiseSort(vertices);
   const body = Bodies.fromVertices(
@@ -268,9 +310,18 @@ const createBody = (path, x, y, scale, look) => {
 
 (async () => {
   await fetchFonts();
-  backgroundColour = genBackground();
-  const styles = genStyles(backgroundColour, NUM_KS);
-  let xVariance = VARIANCE_MIN + (Math.random() * VARIANCE);
+  const searchParams = new URLSearchParams(window.location.search);
+  id = searchParams.get("id") || 99999999;
+  filename = "${id}";
+  hash = await sha256Hash(id);
+  random = new Random(hash);
+  backgroundColour = genBackground(random);
+  const styles = genStyles(random, backgroundColour, NUM_KS);
+  engine = Engine.create({
+    //constraintIterations: 4,
+    //positionIterations: 12,
+  });
+  let xVariance = VARIANCE_MIN + (random.random_dec() * VARIANCE);
   let xVarianceOrigin = (WIDTH / 2) - (xVariance / 2);
   for (let i = 0; i < NUM_KS; i++) {
     const font = fonts["Roboto-normal-900"];
@@ -285,7 +336,7 @@ const createBody = (path, x, y, scale, look) => {
     // FIXME: handle stroke width?
     const [ body, offset ] = createBody(
       glyph,
-      xVarianceOrigin + (Math.random() * xVariance),
+      xVarianceOrigin + (random.random_dec() * xVariance),
       //// Make sure forms don't intersect at the start.
       - (FONT_SIZE_BASE + (i * (FONT_SIZE_BASE * 1.2))),
       glyphUnitScale,
@@ -313,4 +364,15 @@ const createBody = (path, x, y, scale, look) => {
   Composite.add(engine.world, bounds);
 
   window.requestAnimationFrame(renderFun);
+  recordVideo();
+  
+  setTimeout(
+    () => {
+      rendering = false;
+      recorder.stop();
+      saveAsPng();
+      saveAsSvg();
+    },
+    RENDER_TIME
+  );
 })();

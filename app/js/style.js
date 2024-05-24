@@ -185,6 +185,12 @@ const STROKE_WIDTH = [
   20*/
 ];
 
+for(const col of HUE) {
+  if(col.length != 7) {
+    console.log(col);
+  }
+}
+
 const LETTER_CASE = ["uppercase", "lowercase"];
 const FONTS = {
   "Roboto-normal-900": "https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmYUtvAw.ttf",
@@ -207,43 +213,60 @@ const distance = (a, b) => {
   return Math.hypot(r2 - r1, g2 - g1, b2 - b1);
 };
 
-const pick = (items) => items[Math.floor(Math.random() * items.length)];
+const pick = (random, items) => items[random.random_int(0, items.length - 1)];
 
-const pickDifferent = (items, excludes) => {
-  const picked = pick(items); //.filter(x => ! exclude.includes(x)));
+const pickDifferent = (random, items, excludes) => {
+  const picked = pick(random, items); //.filter(x => ! exclude.includes(x)));
   if (typeof(excludes) == 'string') {
     excludes = [excludes];
   }
   // Not tail recursive ;-(
   for (const exclude of excludes) {
     if (distance(picked, exclude) < MIN_DISTANCE) {
-      return pickDifferent(items, exclude);
+      return pickDifferent(random, items, exclude);
     }
   }
   return picked;
 };
 
-const genBackground = () => {
-  return pick(HUE);
+const genBackground = (random) => {
+  return pick(random, HUE);
 };
 
 const range = n => [...Array(n).keys()];
 
+const alternate = (count, a, b) => Array(count).map(i => i % 2 ? a : b);
+
+const alternateChoices = (random, count, options, exclude) => {
+  const a = pickDifferent(random, options, exclude);
+  const b = pickDifferent(random, options, exclude + [a]);
+  Array(count).map(i => i % 2 ? a : b);
+};
+
 const FILL_COLOUR_STRATEGIES = {
-  "same": (background, count) => {
-    return Array(count).fill(pickDifferent(HUE, background));
+  "same": (random, background, count) => {
+    return Array(count).fill(pickDifferent(random, HUE, background));
   },
-  "half & half": (background, count) => {
-    const first = pickDifferent(HUE, background);
+  "half & half": (random, background, count) => {
+    const first = pickDifferent(random, HUE, background);
     return Array(count).fill(first, 0, count / 2)
-      .fill(pickDifferent(HUE, [background, first]), count / 2);
+      .fill(pickDifferent(random, HUE, [background, first]), count / 2);
   },
   //"alternating",
   //"gradient",
-  "random": (background, count) => {
-    return range(count).map(() => pickDifferent(HUE, background));
+  "random": (random, background, count) => {
+    return range(count).map(() => pickDifferent(random, HUE, background));
   },
   //"two each of five"
+};
+
+const STROKE_COLOUR_STRATEGIES = {
+  "none": (random, background, fills, count) => false,
+  "fill colour": (random, background, fills, count) => fills,
+  "background colour": (random, background, fills, count) => background,
+  "alternating": (random, background, fills, count) => alternateChoices(random, count, HUE, fills + [background]),
+  //"gradient":,
+  "random but not fill or bg":(random, background, fills, count) => range(count).map(i => pickDifferent(random, HUE, [background, fills[i]]))
 };
 
 const SCALE_MIN = 0.5;
@@ -251,56 +274,59 @@ const SCALE_MAX = 2.0;
 const SCALE_RANGE = SCALE_MAX - SCALE_MIN;
 
 const SCALE_STRATEGIES = {
-  "one": (count) => Array(count).fill(1.0),
-  //"alternating",
-  "half & half": (count) => Array(count).fill(SCALE_MIN + Math.random() * (SCALE_RANGE / 2), 0, count / 2)
+  "one": (random, count) => Array(count).fill(1.0),
+  "alternating": (random, count) => alternate(count, (random.random_dec() * SCALE_RANGE) + SCALE_MIN, (random.random_dec() * SCALE_RANGE) + SCALE_MIN),
+  "half & half": (random, count) => Array(count).fill(SCALE_MIN + random.random_dec() * (SCALE_RANGE / 2), 0, count / 2)
     .fill(SCALE_MAX - Math.random() * (SCALE_RANGE / 2), count / 2),
-  "random": (count) => range(count).map(() => (Math.random() * SCALE_RANGE) + SCALE_MIN),
-  "little to big": (count) => range(count).map(i => SCALE_MIN + i * (SCALE_RANGE / count)),
-  "big to little": (count) => range(count).map(i => SCALE_MAX - i * (SCALE_RANGE / count)),
-};
-
-const STROKE_COLOUR_STRATEGIES = {
-  "none": (background, fills, count) => undefined,
-  "fill colour": (background, fills, count) => fills,
-  "background colour": (background, fills, count) => background,
-  //"alternating":,
-  //"gradient":,
-  "random but not fill or bg":(background, fills, count) => range(count).map(i => pickDifferent(HUE, [background, fills[i]]))
+  "random": (random, count) => range(count).map(() => (random.random_dec() * SCALE_RANGE) + SCALE_MIN),
+  "little to big": (random, count) => range(count).map(i => SCALE_MIN + i * (SCALE_RANGE / count)),
+  "big to little": (random, count) => range(count).map(i => SCALE_MAX - i * (SCALE_RANGE / count)),
 };
 
 const CASE_STRATEGIES = {
-  "all upper": (count) => Array(count).fill("uppercase"),
-  "all lower": (count) => Array(count).fill("lowercase"),
-  "half and half": (count) => Array(count).fill("uppercase", count / 2)
+  "all upper": (random, count) => Array(count).fill("uppercase"),
+  "all lower": (random, count) => Array(count).fill("lowercase"),
+  "half and half": (random, count) => Array(count).fill("uppercase", count / 2)
     .fill("lowercase", count / 2),
-  "alternating": (count) => Array(count).map(i => i % 2 ? "uppercase": "lowercase"),
-  "random": (count) => range(count).map(i => pick(["uppercase, lowercase"]))
+  "alternating": (random, count) => alternate(count, "uppercase", "lowercase"),
+  "random": (random, count) => range(count).map(i => pick(random, ["uppercase, lowercase"]))
 };
 
 const FONT_STRATEGIES = {
-  "all same": (count) => Array(count).fill(pick(Object.keys(FONTS))),
-  "random": (count) => range(count).map(i => pick(Object.keys(FONTS))),
-  //"alternating":,
-  "half and half": (count) => {
-    const first = pick(Object.keys(FONTS));
+  "all same": (random, count) => Array(count).fill(pick(random, Object.keys(FONTS))),
+  "random": (random, count) => range(count).map(i => pick(random, Object.keys(FONTS))),
+  "alternating": (random, count) => alternateChoices(random, count, Object.keys(FONTS), []),
+  "half and half": (random, count) => {
+    const first = pick(random, Object.keys(FONTS));
     return Array(count).fill(first, 0, count / 2)
-      .fill(pickDifferent(Object.keys(FONTS), [first]), count / 2);
+      .fill(pickDifferent(random, Object.keys(FONTS), [first]), count / 2);
   }
 };
 
-const genStyles = (backgroundColour, count) => {
-  const fillColourStrategy = pick(Object.keys(FILL_COLOUR_STRATEGIES));
-  const fillColours = FILL_COLOUR_STRATEGIES[fillColourStrategy](backgroundColour, count);
-  const strokeColourStrategy = pick(Object.keys(STROKE_COLOUR_STRATEGIES));
-  const strokeColours = STROKE_COLOUR_STRATEGIES[strokeColourStrategy](backgroundColour, fillColours, count);
-  const strokeWidths = Array(count).fill(pick(STROKE_WIDTH));
-  const scaleStrategy = pick(Object.keys(SCALE_STRATEGIES));
-  const scales = SCALE_STRATEGIES[scaleStrategy](count);
-  const fontStrategy = pick(Object.keys(FONT_STRATEGIES));
-  const fonts = FONT_STRATEGIES[fontStrategy](count);
-  const caseStrategy = pick(Object.keys(CASE_STRATEGIES));
-  const cases = CASE_STRATEGIES[caseStrategy](count);
+const genStyles = (random, backgroundColour, count) => {
+  const fillColourStrategy = pick(random, Object.keys(FILL_COLOUR_STRATEGIES));
+  const fillColours = FILL_COLOUR_STRATEGIES[fillColourStrategy](
+    random,
+    backgroundColour,
+    count
+  );
+  const strokeColourStrategy = pick(
+    random,
+    Object.keys(STROKE_COLOUR_STRATEGIES)
+  );
+  const strokeColours = STROKE_COLOUR_STRATEGIES[strokeColourStrategy](
+    random,
+    backgroundColour,
+    fillColours,
+    count
+  );
+  const strokeWidths = Array(count).fill(pick(random, STROKE_WIDTH));
+  const scaleStrategy = pick(random, Object.keys(SCALE_STRATEGIES));
+  const scales = SCALE_STRATEGIES[scaleStrategy](random, count);
+  const fontStrategy = pick(random, Object.keys(FONT_STRATEGIES));
+  const fonts = FONT_STRATEGIES[fontStrategy](random, count);
+  const caseStrategy = pick(random, Object.keys(CASE_STRATEGIES));
+  const cases = CASE_STRATEGIES[caseStrategy](random, count);
   console.log({
     fill: fillColourStrategy,
     stroke: strokeColourStrategy,
