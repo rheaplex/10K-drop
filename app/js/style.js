@@ -1,3 +1,7 @@
+////////////////////////////////////////////////////////////////////////
+// Basic properties: colour, stroke width, font, letter case.
+////////////////////////////////////////////////////////////////////////
+
 const HUE = [
   // Black and white
   '#000000',
@@ -185,19 +189,27 @@ const STROKE_WIDTH = [
   20*/
 ];
 
-for(const col of HUE) {
+// Make sure the colours are well-formed.
+/*for(const col of HUE) {
   if(col.length != 7) {
     console.log(col);
   }
-}
+}*/
 
-const LETTER_CASE = ["uppercase", "lowercase"];
 const FONTS = {
   "Roboto-normal-900": "https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmYUtvAw.ttf",
   "Merriweather-regular-400": "https://fonts.gstatic.com/s/merriweather/v30/u-440qyriQwlOrhSvowK_l5Oew.ttf"
 };
 
-const MIN_DISTANCE = 16;
+const LETTER_CASE = ["uppercase", "lowercase"];
+
+
+////////////////////////////////////////////////////////////////////////
+// Colour values and distance.
+////////////////////////////////////////////////////////////////////////
+
+// The minimum euclidean distance between two colours we accept as "different".
+const MIN_DISTANCE = 24;
 
 const parseCssColor = (color) => {
   return [
@@ -208,12 +220,19 @@ const parseCssColor = (color) => {
 };
 
 const distance = (a, b) => {
-  const [r1, g1, b1] = parseCssColor(a);;
+  const [r1, g1, b1] = parseCssColor(a);
   const [r2, g2, b2] = parseCssColor(b);
   return Math.hypot(r2 - r1, g2 - g1, b2 - b1);
 };
 
+
+////////////////////////////////////////////////////////////////////////
+// Random choices
+////////////////////////////////////////////////////////////////////////
+
 const pick = (random, items) => items[random.random_int(0, items.length - 1)];
+
+// Make sure we pick an item that we do not wish to exclude.
 
 const pickDifferent = (random, items, excludes) => {
   const picked = pick(random, items); //.filter(x => ! exclude.includes(x)));
@@ -229,44 +248,74 @@ const pickDifferent = (random, items, excludes) => {
   return picked;
 };
 
-const genBackground = (random) => {
-  return pick(random, HUE);
-};
+
+////////////////////////////////////////////////////////////////////////
+// Main flow of execution
+////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////
+// Generate ranges of values, particularly alternating values.
+////////////////////////////////////////////////////////////////////////
 
 const range = n => [...Array(n).keys()];
 
-const alternate = (count, a, b) => Array(count).map(i => i % 2 ? a : b);
+// Alternate two known values in an array of size count.
+
+const alternate = (count, a, b) => range(count).map(i => i % 2 ? a : b);
+
+// Pick two different values that we do not wish to exclude,
+// then alternate them in an array of size count.
 
 const alternateChoices = (random, count, options, exclude) => {
   const a = pickDifferent(random, options, exclude);
   const b = pickDifferent(random, options, exclude.concat([a]));
-  return Array(count).map(i => i % 2 ? a : b);
+  return alternate(count, a, b);
 };
 
+
+////////////////////////////////////////////////////////////////////////
+// Generator strategies.
+////////////////////////////////////////////////////////////////////////
+
 const FILL_COLOUR_STRATEGIES = {
-  "same": (random, background, count) => {
-    return Array(count).fill(pickDifferent(random, HUE, background));
-  },
+  "same": (random, background, count) => Array(count)
+    .fill(pickDifferent(random, HUE, background)),
+
   "half & half": (random, background, count) => {
     const first = pickDifferent(random, HUE, background);
     return Array(count).fill(first, 0, count / 2)
       .fill(pickDifferent(random, HUE, [background, first]), count / 2);
   },
+
   //"alternating",
+
   //"gradient",
-  "random": (random, background, count) => {
-    return range(count).map(() => pickDifferent(random, HUE, background));
-  },
+
+  "random": (random, background, count) => range(count)
+    .map(() => pickDifferent(random, HUE, background)),
+
   //"two each of five"
 };
 
 const STROKE_COLOUR_STRATEGIES = {
   "none": (random, background, fills, count) => false,
+
   "fill colour": (random, background, fills, count) => fills,
-  "background colour": (random, background, fills, count) => background,
-  "alternating": (random, background, fills, count) => alternateChoices(random, count, HUE, fills.concat([background])),
+
+  "background colour": (random, background, fills, count) => Array(count)
+    .fill(background),
+
+  "alternating": (random, background, fills, count) => alternateChoices(
+    random,
+    count,
+    HUE,
+    fills.concat([background])
+  ),
+
   //"gradient":,
-  "random but not fill or bg":(random, background, fills, count) => range(count).map(i => pickDifferent(random, HUE, [background, fills[i]]))
+  "random but not fill or bg":(random, background, fills, count) => range(count)
+    .map(i => pickDifferent(random, HUE, [background, fills[i]]))
 };
 
 const SCALE_MIN = 0.5;
@@ -274,28 +323,57 @@ const SCALE_MAX = 2.0;
 const SCALE_RANGE = SCALE_MAX - SCALE_MIN;
 
 const SCALE_STRATEGIES = {
-  "one": (random, count) => Array(count).fill(1.0),
-  "alternating": (random, count) => alternate(count, (random.random_dec() * SCALE_RANGE) + SCALE_MIN, (random.random_dec() * SCALE_RANGE) + SCALE_MIN),
-  "half & half": (random, count) => Array(count).fill(SCALE_MIN + random.random_dec() * (SCALE_RANGE / 2), 0, count / 2)
-    .fill(SCALE_MAX - Math.random() * (SCALE_RANGE / 2), count / 2),
-  "random": (random, count) => range(count).map(() => (random.random_dec() * SCALE_RANGE) + SCALE_MIN),
-  "little to big": (random, count) => range(count).map(i => SCALE_MIN + i * (SCALE_RANGE / count)),
-  "big to little": (random, count) => range(count).map(i => SCALE_MAX - i * (SCALE_RANGE / count)),
+  "one": (random, count) => Array(count)
+    .fill(1.0),
+
+  "alternating": (random, count) => alternate(
+    count,
+    (random.random_dec() * SCALE_RANGE) + SCALE_MIN,
+    (random.random_dec() * SCALE_RANGE) + SCALE_MIN
+  ),
+
+  "half & half": (random, count) => Array(count)
+    .fill(SCALE_MIN + random.random_dec() * (SCALE_RANGE / 2), 0, count / 2)
+    .fill(SCALE_MAX - random.random_dec() * (SCALE_RANGE / 2), count / 2),
+
+  "random": (random, count) => range(count)
+    .map(() => (random.random_dec() * SCALE_RANGE) + SCALE_MIN),
+
+  "little to big": (random, count) => range(count)
+    .map(i => SCALE_MIN + i * (SCALE_RANGE / count)),
+
+  "big to little": (random, count) => range(count)
+    .map(i => SCALE_MAX - i * (SCALE_RANGE / count)),
 };
 
 const CASE_STRATEGIES = {
   "all upper": (random, count) => Array(count).fill("uppercase"),
+
   "all lower": (random, count) => Array(count).fill("lowercase"),
-  "half and half": (random, count) => Array(count).fill("uppercase", count / 2)
+
+  "half and half": (random, count) => Array(count)
+    .fill("uppercase", count / 2)
     .fill("lowercase", count / 2),
+
   "alternating": (random, count) => alternate(count, "uppercase", "lowercase"),
-  "random": (random, count) => range(count).map(i => pick(random, ["uppercase, lowercase"]))
+
+  "random": (random, count) => range(count).map(i => pick(random, LETTER_CASE))
 };
 
 const FONT_STRATEGIES = {
-  "all same": (random, count) => Array(count).fill(pick(random, Object.keys(FONTS))),
-  "random": (random, count) => range(count).map(i => pick(random, Object.keys(FONTS))),
-  "alternating": (random, count) => alternateChoices(random, count, Object.keys(FONTS), []),
+  "all same": (random, count) => Array(count)
+    .fill(pick(random, Object.keys(FONTS))),
+
+  "random": (random, count) => range(count)
+    .map(i => pick(random, Object.keys(FONTS))),
+
+  "alternating": (random, count) => alternateChoices(
+    random,
+    count,
+    Object.keys(FONTS),
+    []
+  ),
+
   "half and half": (random, count) => {
     const first = pick(random, Object.keys(FONTS));
     return Array(count).fill(first, 0, count / 2)
@@ -303,7 +381,20 @@ const FONT_STRATEGIES = {
   }
 };
 
-const genStyles = (random, backgroundColour, count) => {
+
+////////////////////////////////////////////////////////////////////////
+// Main flow of execution
+////////////////////////////////////////////////////////////////////////
+
+// The image background colour.
+
+const genBackground = (random) => {
+  return pick(random, HUE);
+};
+
+// The style for each K .
+
+const generateProperties = (random, backgroundColour, count) => {
   const fillColourStrategy = pick(random, Object.keys(FILL_COLOUR_STRATEGIES));
   const fillColours = FILL_COLOUR_STRATEGIES[fillColourStrategy](
     random,
@@ -335,6 +426,14 @@ const genStyles = (random, backgroundColour, count) => {
     font: fontStrategy,
     case: caseStrategy
   });
+  console.log([fillColours, strokeColours, strokeWidths, scales, fonts, cases]);
+  return [fillColours, strokeColours, strokeWidths, scales, fonts, cases];
+};
+
+const genStyles = (random, count) => {
+  const backgroundColour = genBackground(random);
+  const [fillColours, strokeColours, strokeWidths, scales, fonts, cases]
+        = generateProperties(random, backgroundColour, count);
   const styles = [];
   for (let i = 0; i < count; i++) {
     const style = {
@@ -343,7 +442,7 @@ const genStyles = (random, backgroundColour, count) => {
       fontName: fonts[i],
       case: cases[i]
     };
-    if (strokeColourStrategy != "none") {
+    if (strokeColours) {
       style.strokeColour = strokeColours[i];
       style.strokeWidth = strokeWidths[i];
     } else {
@@ -351,5 +450,5 @@ const genStyles = (random, backgroundColour, count) => {
     }
     styles.push(style);
   }
-  return styles;
+  return [backgroundColour, styles];
 };
