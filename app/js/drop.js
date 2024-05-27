@@ -91,7 +91,7 @@ const saveVideo = async (videoBlob) => {
   document.body.appendChild(element);
 
   element.click();
-  
+
   document.body.removeChild(element);
 };
 
@@ -120,7 +120,7 @@ const saveAsPng = () => {
   document.body.appendChild(element);
 
   element.click();
-  
+
   document.body.removeChild(element);
 };
 
@@ -139,7 +139,7 @@ ${encodeURIComponent(svgElement.outerHTML)}`;
   document.body.appendChild(element);
 
   element.click();
-  
+
   document.body.removeChild(element);
 };
 
@@ -167,7 +167,6 @@ function asSvg () {
     if (! k.body.render.visible) {
       continue;
     }
-    
     const path = document.createElementNS(
       'http://www.w3.org/2000/svg',
       'path'
@@ -189,12 +188,11 @@ function asSvg () {
       path.setAttribute('stroke', k.style.strokeColour);
       path.setAttribute('stroke-width', k.style.strokeWidth);
     }
+    path.setAttribute('transform-origin', '50% 50%');
     // Convert radians to degrees, and flip the y-axis of the glyph.
     path.setAttribute(
       'transform',
-      `translate(${k.body.position.x} ${k.body.position.y})
-       rotate(${k.body.angle / (Math.PI / 180)})
-       scale(1 -1)`
+`translate(${k.body.position.x} ${k.body.position.y}) rotate(${k.body.angle * (180 / Math.PI)}) scale(1 -1)`
     );
     svg.appendChild(path);
   }
@@ -312,7 +310,7 @@ const createBody = (glyph, x, y, scale, look) => {
   await fetchFonts();
   const searchParams = new URLSearchParams(window.location.search);
   id = searchParams.get("id") || 99999999;
-  filename = "${id}";
+  filename = `${id}`;
   hash = await sha256Hash(id);
   random = new Random(hash);
   backgroundColour = genBackground(random);

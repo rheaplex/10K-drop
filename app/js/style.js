@@ -239,8 +239,8 @@ const alternate = (count, a, b) => Array(count).map(i => i % 2 ? a : b);
 
 const alternateChoices = (random, count, options, exclude) => {
   const a = pickDifferent(random, options, exclude);
-  const b = pickDifferent(random, options, exclude + [a]);
-  Array(count).map(i => i % 2 ? a : b);
+  const b = pickDifferent(random, options, exclude.concat([a]));
+  return Array(count).map(i => i % 2 ? a : b);
 };
 
 const FILL_COLOUR_STRATEGIES = {
@@ -264,7 +264,7 @@ const STROKE_COLOUR_STRATEGIES = {
   "none": (random, background, fills, count) => false,
   "fill colour": (random, background, fills, count) => fills,
   "background colour": (random, background, fills, count) => background,
-  "alternating": (random, background, fills, count) => alternateChoices(random, count, HUE, fills + [background]),
+  "alternating": (random, background, fills, count) => alternateChoices(random, count, HUE, fills.concat([background])),
   //"gradient":,
   "random but not fill or bg":(random, background, fills, count) => range(count).map(i => pickDifferent(random, HUE, [background, fills[i]]))
 };
