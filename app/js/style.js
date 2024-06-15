@@ -312,8 +312,8 @@ const STROKE_COLOUR_STRATEGIES = {
     .map(i => pickDifferent(random, HUE, [background, fills[i]]))
 };
 
-const SCALE_MIN = 0.5;
-const SCALE_MAX = 2.0;
+const SCALE_MIN = 1.0;
+const SCALE_MAX = 1.75;
 const SCALE_RANGE = SCALE_MAX - SCALE_MIN;
 
 const SCALE_STRATEGIES = {
@@ -412,15 +412,6 @@ const generateProperties = (random, backgroundColour, count) => {
   const fonts = FONT_STRATEGIES[fontStrategy](random, count);
   const caseStrategy = pick(random, Object.keys(CASE_STRATEGIES));
   const cases = CASE_STRATEGIES[caseStrategy](random, count);
-  console.log({
-    fill: fillColourStrategy,
-    stroke: strokeColourStrategy,
-    strokeWidth: strokeWidths[0],
-    scale: scaleStrategy,
-    font: fontStrategy,
-    case: caseStrategy
-  });
-  console.log([fillColours, strokeColours, strokeWidths, scales, fonts, cases]);
   return [fillColours, strokeColours, strokeWidths, scales, fonts, cases];
 };
 

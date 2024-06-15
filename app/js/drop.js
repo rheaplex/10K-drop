@@ -23,8 +23,8 @@ const WIDTH  = 3840; //1600;
 const HEIGHT = 2160; //900;
 
 // How far from the centre along the x-axis to drop the Ks.
-const VARIANCE_MIN = WIDTH / 50;
-const VARIANCE_MAX = WIDTH / 5;
+const VARIANCE_MIN = WIDTH / 6;
+const VARIANCE_MAX = WIDTH / 3;
 const VARIANCE     = VARIANCE_MAX - VARIANCE_MIN;
 
 // The maximum size for the Ks.
@@ -32,7 +32,7 @@ const VARIANCE     = VARIANCE_MAX - VARIANCE_MIN;
 // all fall into the visible area and don't stack offscreen.
 const FONT_SIZE_BASE = HEIGHT / 3;
 // How long to run the physics before stopping and saving.
-const RENDER_TIME    = 20 * 1000;
+const RENDER_TIME    = 30 * 1000;
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -167,7 +167,7 @@ const createEngine = () => {
   engine = Engine.create({
     //constraintIterations: 4,
     //positionIterations: 12,
-    gravity: { x: 0.0, y: 1.1, scale: 0.001 }
+    gravity: { x: 0.0, y: 1.1, scale: 0.002 }
   });
 };
 
@@ -268,7 +268,7 @@ const createKs = (styles) => {
       glyph,
       xVarianceOrigin + (random.random_dec() * xVariance),
       //// Make sure forms don't intersect when we start the physics simulation.
-      - (FONT_SIZE_BASE + (i * (FONT_SIZE_BASE * 1.2))),
+      - (FONT_SIZE_BASE + (i * (FONT_SIZE_BASE * 2.1))),
       glyphUnitScale,
       style
     );
@@ -307,17 +307,20 @@ const createScene = () => {
 // Main flow of execution
 ////////////////////////////////////////////////////////////////////////
 
-function capturePreview() {
+const capturePreview = () => {
+  window.$artifact = {
+    preview: toSvg() //toPng();
+  };
   console.info("###verse-preview-capture");
 }
 
 const processParameters = () => {
-  const q = new URLSearchParams(window.location.search).get("payload");
-  console.log(q);
-  const p = JSON.parse(atob(q) || {});
+  const params = new URLSearchParams(window.location.search);
+  const q = params.get("payload");
+  const p = JSON.parse(q ? atob(q) : "{}");
   //hash = p.hash || (Math.random() + 1).toString(16).substring(2);
-  id = p.editionNumber || 0;
-  createPreview = p.machine || false;
+  id = p.editionNumber || params.get("id");
+  createPreview = params.get("machine") || false;
 };
 
 // Stop the physics simulation after it should have settled,
@@ -329,9 +332,7 @@ const setRenderFinishTimeout = () => {
   setTimeout(() => {
     rendering = false;
     if (createPreview) {
-      window.$artifact.preview =
-        //toPng();
-      toSvg();
+      capturePreview();
     }
   }, RENDER_TIME);
 };
