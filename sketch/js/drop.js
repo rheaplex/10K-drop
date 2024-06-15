@@ -42,14 +42,20 @@ const RENDER_TIME    = 20 * 1000;
 let canvas;
 let canvasCtx;
 let backgroundColour;
-let rendering;
+let rendering = true;
+// Are we saving the results to file(s)?
+let saving;
+// Are we saving the results to file(s) in a loop?
+// If so, how many are we saving?
+let generateCount;
 // The work id.
 let id;
-let createPreview;
 // Our prng.
 let random;
 // The Matter.js engine. We manage its updates manually.
 let engine;
+// The video recorder for when we generate.
+let recorder;
 // The opentype.js font objects representing the fonts we use.
 const fonts = {};
 // The Ks to drop. Includes styling, physics simulation, and
@@ -58,16 +64,61 @@ const ks = [];
 
 
 ////////////////////////////////////////////////////////////////////////
-// Convert the canvas to saveable image formats.
+// Recording and saving the scene in various formats.
 ////////////////////////////////////////////////////////////////////////
 
-const toPng = () => canvas.toDataURL();
+const saveData = (data, fileExtension) => {
+  const element = document.createElement('a');
+  element.setAttribute( 'href', data);
+  element.setAttribute('download', `${id}.${fileExtension}`);
+  element.style.display = 'none';
 
-const toSvg = () => {
+  document.body.appendChild(element);
+
+  element.click();
+
+  document.body.removeChild(element);
+};
+
+const recordVideo = () => {
+  const chunks = [];
+  const stream = canvas.captureStream(30);
+  recorder = new MediaRecorder(stream);
+  recorder.ondataavailable = e => chunks.push(e.data);
+  recorder.onstop = (e) => {
+    saveData(
+      URL.createObjectURL(
+        new Blob(
+          chunks,
+          { type: "video/webm;codecs=h264" }
+        )),
+      "webm"
+    );
+  };
+  recorder.start();
+};
+
+const saveAsPng = () => {
+  const element = document.createElement('a');
+  element.setAttribute( 'href', canvas.toDataURL());
+  element.setAttribute('download', `${id}.png`);
+
+  element.style.display = 'none';
+  document.body.appendChild(element);
+
+  element.click();
+
+  document.body.removeChild(element);
+};
+
+const saveAsSvg = () => {
   const ctx = new svgcanvas.Context(WIDTH, HEIGHT);
   render(ctx);
-  const svg = encodeURIComponent(ctx.getSerializedSvg());
-  return `data:image/svg+xml;charset=utf-8,${svg}`;
+const svg = encodeURIComponent(ctx.getSerializedSvg());
+  saveData(
+    `data:image/svg+xml;charset=utf-8,${svg}`,
+    "svg"
+  );
 };
 
 
@@ -82,6 +133,25 @@ const render = (ctx) => {
     if (! k.body.render.visible) {
       continue;
     }
+    // Render the parts of the physics simulation body for debugging.
+    /*for (const part of k.body.parts.slice(1)) {
+      if (!part.render.visible) {
+        continue;
+      }
+      ctx.beginPath();
+      const vertices = part.vertices;
+      ctx.moveTo(vertices[0].x, vertices[0].y);
+      for (let j = 1; j < vertices.length; j += 1) {
+        ctx.lineTo(part.vertices[j].x, part.vertices[j].y);
+      }
+      ctx.lineTo(vertices[0].x, vertices[0].y);
+      ctx.strokeStyle = part.render.strokeStyle;
+      ctx.fillStyle = 'green';//part.render.fillStyle;
+      ctx.lineWidth = part.render.lineWidth;
+
+      ctx.fill();
+      //ctx.stroke();
+    }*/
 
     ctx.save();
     ctx.translate(
@@ -98,6 +168,10 @@ const render = (ctx) => {
       k.font
     );
     ctx.restore();
+
+    // Render the centre of the physics simulation body for debugging.
+    /*ctx.fillStyle = "#ff00ff";
+    ctx.fillRect(k.body.position.x, k.body.position.y, 10, 10);*/
   }
 };
 
@@ -125,11 +199,18 @@ const fetchFonts = async () => {
   const fontNames = Object.keys(FONTS);
   let result = await Promise.all(
     fontNames.map(async fontName =>
-      fetchFont(`./fonts/${FONTS[fontName]}`)
+      await fetchFont(FONTS[fontName])
     ));
   for (let i = 0; i < fontNames.length; i++) {
     fonts[fontNames[i]] = result[i];
   }
+};
+
+const processSearchParams = () => {
+  const searchParams = new URLSearchParams(window.location.search);
+  id = parseInt(searchParams.get("id"), 10) || 1;
+  saving = searchParams.get("save") || false;
+  generateCount = parseInt(searchParams.get("editionSize"), 10) || 0;
 };
 
 const createCanvas = () => {
@@ -167,7 +248,6 @@ const createEngine = () => {
   engine = Engine.create({
     //constraintIterations: 4,
     //positionIterations: 12,
-    gravity: { x: 0.0, y: 1.1, scale: 0.001 }
   });
 };
 
@@ -176,7 +256,7 @@ const createBounds = () => [
   // Base
   Bodies.rectangle(WIDTH / 2, HEIGHT + 500, WIDTH, 1000, {
     isStatic: true,
-    staticFriction: 200,
+    staticFriction: 20,
     render: {
       visible: false
     }
@@ -184,6 +264,7 @@ const createBounds = () => [
   // Left
   Bodies.rectangle(-1, 0, 1, 9999, {
     isStatic: true,
+    staticFriction: 20,
     render: {
       visible: false
     }
@@ -191,6 +272,7 @@ const createBounds = () => [
   // Right
   Bodies.rectangle(WIDTH + 1, 0, 1, 9999, {
     isStatic: true,
+    staticFriction: 20,
     render: {
       visible: false
     }
@@ -218,11 +300,10 @@ const createBody = (glyph, x, y, scale, look) => {
     {
       render: render,
       // Make sure the physics simulations isn't too bouncy/slidey.
-      friction: 0.7,
-      density: scale * 10,
-      //frictionStatic: 10,
+      //friction: 0.7,
+      frictionStatic: 10,
       //restitution: 0.2,
-      //slop: 0.5,
+      //slop: 0.2
     },
     true
   );
@@ -307,17 +388,18 @@ const createScene = () => {
 // Main flow of execution
 ////////////////////////////////////////////////////////////////////////
 
-function capturePreview() {
-  console.info("###verse-preview-capture");
-}
+// When we are generating each work by reloading the page with an
+// increased ID in a loop, this is the function that reloads the page
+// with its new state.
 
-const processParameters = () => {
-  const q = new URLSearchParams(window.location.search).get("payload");
-  console.log(q);
-  const p = JSON.parse(atob(q) || {});
-  //hash = p.hash || (Math.random() + 1).toString(16).substring(2);
-  id = p.editionNumber || 0;
-  createPreview = p.machine || false;
+const reloadForNextId = () => {
+  const queryData = new URLSearchParams(window.location.search.slice(1));
+  queryData.set("id", id + 1);
+  queryData.set("save", true);
+  queryData.set("editionSize", generateCount);
+  const newUrl = new URL(window.location.href);
+  newUrl.search = queryData;
+  window.location.href = newUrl;
 };
 
 // Stop the physics simulation after it should have settled,
@@ -328,10 +410,13 @@ const processParameters = () => {
 const setRenderFinishTimeout = () => {
   setTimeout(() => {
     rendering = false;
-    if (createPreview) {
-      window.$artifact.preview =
-        //toPng();
-      toSvg();
+    if (saving) {
+      recorder.stop();
+      saveAsPng();
+      saveAsSvg();
+    }
+    if (generateCount && id < generateCount) {
+      reloadForNextId();
     }
   }, RENDER_TIME);
 };
@@ -340,14 +425,16 @@ const setRenderFinishTimeout = () => {
 
 (async () => {
   await fetchFonts();
-  processParameters();
+  processSearchParams();
   await createPrng();
   createCanvas();
   createEngine();
   createScene();
   Composite.add(engine.world, createBounds());
+  if (saving) {
+    recordVideo();
+  }
   setRenderFinishTimeout();
   // Go!
-  rendering = true;
   window.requestAnimationFrame(loop);
 })();

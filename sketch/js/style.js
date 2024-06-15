@@ -182,17 +182,23 @@ const STROKE_WIDTH = [
   9,
   10,
   12,
+  /*14,
+  15,
+  16,
+  18,
+  20*/
 ];
 
-// We don't use the font names in CSS so they don't have to be accurate here.
+// Make sure the colours are well-formed.
+/*for(const col of HUE) {
+  if(col.length != 7) {
+    console.log(col);
+  }
+}*/
+
 const FONTS = {
-  "Alfa-Slab-One-regular-400": "AlfaSlabOne-Regular.ttf",
-  "Merriweather-regular-400": "u-440qyriQwlOrhSvowK_l5Oew.ttf",
-  "Noto-Serif-Black": "NotoSerif-Black.ttf",
-  "Roboto-normal-900": "KFOlCnqEu92Fr1MmYUtvAw.ttf",
-  "Roboto-mono-regular-400": "RobotoMono-Regular.ttf",
-  "Orbitron-Medium-regular-400": "Orbitron-Medium.ttf",
-  "Montserrat-SemiBold-600": "Montserrat-SemiBold.ttf",
+  "Roboto-normal-900": "https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmYUtvAw.ttf",
+  "Merriweather-regular-400": "https://fonts.gstatic.com/s/merriweather/v30/u-440qyriQwlOrhSvowK_l5Oew.ttf"
 };
 
 const LETTER_CASE = ["uppercase", "lowercase"];
