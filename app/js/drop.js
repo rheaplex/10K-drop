@@ -30,9 +30,10 @@ const VARIANCE     = VARIANCE_MAX - VARIANCE_MIN;
 // The maximum size for the Ks.
 // This can't be too big as we want to make sure that they
 // all fall into the visible area and don't stack offscreen.
-const FONT_SIZE_BASE = HEIGHT / 3;
+const FONT_SIZE_BASE      = HEIGHT / 3;
 // How long to run the physics before stopping and saving.
-const RENDER_TIME    = 30 * 1000;
+const RENDER_TIME_SECONDS = 30;
+const RENDER_TIME_MILLIS  = RENDER_TIME_SECONDS * 1000;
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -312,7 +313,7 @@ const capturePreview = () => {
     preview: toSvg() //toPng();
   };
   console.info("###verse-preview-capture");
-}
+};
 
 const processParameters = () => {
   const params = new URLSearchParams(window.location.search);
@@ -328,13 +329,28 @@ const processParameters = () => {
 
 // The outer function curlies are just for indentation formatting.
 
-const setRenderFinishTimeout = () => {
+const renderLoop = () => {
+  rendering = true;
+  window.requestAnimationFrame(loop);
   setTimeout(() => {
     rendering = false;
     if (createPreview) {
       capturePreview();
     }
-  }, RENDER_TIME);
+  }, RENDER_TIME_MILLIS);
+};
+
+const renderPreview = () => {
+  for (let i = 0; i < 60 * RENDER_TIME_SECONDS; i++) {
+    Engine.update(engine, 16);
+  }
+  capturePreview();
+  const img = document.createElement("img");
+  img.setAttribute("width", WIDTH);
+  img.setAttribute("height", HEIGHT);
+  img.src = window.$artifact.preview;
+  canvas.parentNode.removeChild(canvas);
+  document.body.appendChild(img);
 };
 
 // Our main entry point.
@@ -347,8 +363,9 @@ const setRenderFinishTimeout = () => {
   createEngine();
   createScene();
   Composite.add(engine.world, createBounds());
-  setRenderFinishTimeout();
-  // Go!
-  rendering = true;
-  window.requestAnimationFrame(loop);
+  if (! createPreview) {
+    renderLoop();
+  } else {
+    renderPreview();
+  }
 })();
