@@ -173,26 +173,23 @@ const STROKE_WIDTH = [
   // No 0, we need to cover internal edges
   1,
   2,
-  3,
   4,
-  5,
-  6,
-  7,
   8,
-  9,
-  10,
-  12,
+  16,
+  32
 ];
 
 // We don't use the font names in CSS so they don't have to be accurate here.
 const FONTS = {
   "Alfa-Slab-One-regular-400": "AlfaSlabOne-Regular.ttf",
   "Merriweather-regular-400": "u-440qyriQwlOrhSvowK_l5Oew.ttf",
-  "Noto-Serif-Black": "NotoSerif-Black.ttf",
+  //FIXME: Replace with font without curves that thwart collision detection.
+  //"Noto-Serif-Black": "NotoSerif-Black.ttf",
   "Roboto-normal-900": "KFOlCnqEu92Fr1MmYUtvAw.ttf",
   "Roboto-mono-regular-400": "RobotoMono-Regular.ttf",
   "Orbitron-Medium-regular-400": "Orbitron-Medium.ttf",
-  "Montserrat-SemiBold-600": "Montserrat-SemiBold.ttf",
+  //FIXME: Replace with font that outlines better.
+  //"Montserrat-SemiBold-600": "Montserrat-SemiBold.ttf",
 };
 
 const LETTER_CASE = ["uppercase", "lowercase"];
@@ -219,6 +216,8 @@ const distance = (a, b) => {
   return Math.hypot(r2 - r1, g2 - g1, b2 - b1);
 };
 
+const cssColor = (r, g, b) => `rgb(${r}, ${g}, ${b})`;
+
 
 ////////////////////////////////////////////////////////////////////////
 // Random choices
@@ -244,11 +243,6 @@ const pickDifferent = (random, items, excludes) => {
 
 
 ////////////////////////////////////////////////////////////////////////
-// Main flow of execution
-////////////////////////////////////////////////////////////////////////
-
-
-////////////////////////////////////////////////////////////////////////
 // Generate ranges of values, particularly alternating values.
 ////////////////////////////////////////////////////////////////////////
 
@@ -267,13 +261,31 @@ const alternateChoices = (random, count, options, exclude) => {
   return alternate(count, a, b);
 };
 
+const difference = (a, b) => (a < b) ? b - a : a - b;
+
+const colourGradient = (from, to, steps) => {
+  const a = parseCssColor(from);
+  const b = parseCssColor(to);
+  const rbase = Math.min(a[0], b[0]);
+  const gbase = Math.min(a[1], b[1]);
+  const bbase = Math.min(a[2], b[2]);
+  const rstep = difference(b[0], a[0]) / steps;
+  const gstep = difference(b[1], a[1]) / steps;
+  const bstep = difference(b[2], a[2]) / steps;
+  return range(steps).map(i => cssColor(
+    rbase + (rstep * i),
+    gbase + (gstep * i),
+    bbase + (bstep * i)
+  ));
+};
+
 
 ////////////////////////////////////////////////////////////////////////
 // Generator strategies.
 ////////////////////////////////////////////////////////////////////////
 
 const FILL_COLOUR_STRATEGIES = {
-  "same": (random, background, count) => Array(count)
+  "all the same": (random, background, count) => Array(count)
     .fill(pickDifferent(random, HUE, background)),
 
   "half & half": (random, background, count) => {
@@ -282,14 +294,30 @@ const FILL_COLOUR_STRATEGIES = {
       .fill(pickDifferent(random, HUE, [background, first]), count / 2);
   },
 
-  //"alternating",
+  "alternating": (random, background, count) => alternateChoices(
+    random,
+    count,
+    HUE,
+    [ background ]
+  ),
 
-  //"gradient",
+  "two of each": (random, background, count) => {
+    let colours = [];
+    for (let i = 0; i < Math.floor(count / 2); i++) {
+      const colour = pickDifferent(random, HUE, colours.concat([ background ]));
+      colours = colours.concat([ colour, colour ]);
+    }
+    return colours;
+  },
+
+  "gradient": (random, background, count) => {
+    const from = pickDifferent(random, HUE, background);
+    const to = pickDifferent(random, HUE, [ background, from ]);
+    return colourGradient(from, to, count);
+  },
 
   "random": (random, background, count) => range(count)
     .map(() => pickDifferent(random, HUE, background)),
-
-  //"two each of five"
 };
 
 const STROKE_COLOUR_STRATEGIES = {
@@ -297,8 +325,9 @@ const STROKE_COLOUR_STRATEGIES = {
 
   "fill colour": (random, background, fills, count) => fills,
 
-  "background colour": (random, background, fills, count) => Array(count)
-    .fill(background),
+  // This is too confusing when rendered.
+  /*"background colour": (random, background, fills, count) => Array(count)
+    .fill(background),*/
 
   "alternating": (random, background, fills, count) => alternateChoices(
     random,
@@ -307,7 +336,12 @@ const STROKE_COLOUR_STRATEGIES = {
     fills.concat([background])
   ),
 
-  //"gradient":,
+  "gradient": (random, background, fills, count) => {
+    const from = pickDifferent(random, HUE, fills.concat([background]));
+    const to = pickDifferent(random, HUE, fills.concat([ background, from ]));
+    return colourGradient(from, to, count);
+  },
+
   "random but not fill or bg":(random, background, fills, count) => range(count)
     .map(i => pickDifferent(random, HUE, [background, fills[i]]))
 };
@@ -355,7 +389,7 @@ const CASE_STRATEGIES = {
 };
 
 const FONT_STRATEGIES = {
-  "all same": (random, count) => Array(count)
+  "all the same": (random, count) => Array(count)
     .fill(pick(random, Object.keys(FONTS))),
 
   "random": (random, count) => range(count)
@@ -412,6 +446,15 @@ const generateProperties = (random, backgroundColour, count) => {
   const fonts = FONT_STRATEGIES[fontStrategy](random, count);
   const caseStrategy = pick(random, Object.keys(CASE_STRATEGIES));
   const cases = CASE_STRATEGIES[caseStrategy](random, count);
+  console.log({
+    fill: fillColourStrategy,
+    stroke: strokeColourStrategy,
+    strokeWidth: strokeWidths[0],
+    scale: scaleStrategy,
+    font: fontStrategy,
+    case: caseStrategy
+  });
+  console.log([fillColours, strokeColours, strokeWidths, scales, fonts, cases]);
   return [fillColours, strokeColours, strokeWidths, scales, fonts, cases];
 };
 

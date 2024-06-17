@@ -78,12 +78,11 @@ const toSvg = () => {
 
 const render = (ctx) => {
   ctx.fillStyle = backgroundColour;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
   for (const k of ks) {
     if (! k.body.render.visible) {
       continue;
     }
-
     ctx.save();
     ctx.translate(
       k.body.position.x,
@@ -278,7 +277,7 @@ const createKs = (styles) => {
       fill: style.fillColour
     };
     if (style.strokeColour) {
-      options.stroke = styles.strokeColour;
+      options.stroke = style.strokeColour;
       options.strokeWidth = style.strokeWidth;
     }
     const k = {
@@ -346,26 +345,25 @@ const renderPreview = () => {
   }
   capturePreview();
   const img = document.createElement("img");
-  img.setAttribute("width", WIDTH);
-  img.setAttribute("height", HEIGHT);
+  img.setAttribute("width", "100%");
+  img.setAttribute("height", "auto");
   img.src = window.$artifact.preview;
-  canvas.parentNode.removeChild(canvas);
   document.body.appendChild(img);
 };
 
 // Our main entry point.
 
-(async () => {
+const main = async () => {
   await fetchFonts();
   processParameters();
   await createPrng();
-  createCanvas();
   createEngine();
   createScene();
   Composite.add(engine.world, createBounds());
   if (! createPreview) {
+    createCanvas();
     renderLoop();
   } else {
     renderPreview();
   }
-})();
+};
