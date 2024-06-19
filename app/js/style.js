@@ -171,12 +171,13 @@ const HUE = [
 
 const STROKE_WIDTH = [
   // No 0, we need to cover internal edges
-  1,
+  /*1,
   2,
-  4,
-  8,
+  4,*/
+  //8,
   16,
-  32
+  32,
+  64
 ];
 
 // We don't use the font names in CSS so they don't have to be accurate here.
@@ -200,7 +201,7 @@ const LETTER_CASE = ["uppercase", "lowercase"];
 ////////////////////////////////////////////////////////////////////////
 
 // The minimum euclidean distance between two colours we accept as "different".
-const MIN_DISTANCE = 24;
+const MIN_DISTANCE = 32; //24;
 
 const parseCssColor = (color) => {
   return [
@@ -301,14 +302,14 @@ const FILL_COLOUR_STRATEGIES = {
     [ background ]
   ),
 
-  "two of each": (random, background, count) => {
+  /*"two of each": (random, background, count) => {
     let colours = [];
     for (let i = 0; i < Math.floor(count / 2); i++) {
       const colour = pickDifferent(random, HUE, colours.concat([ background ]));
       colours = colours.concat([ colour, colour ]);
     }
     return colours;
-  },
+  },*/
 
   "gradient": (random, background, count) => {
     const from = pickDifferent(random, HUE, background);
@@ -316,20 +317,20 @@ const FILL_COLOUR_STRATEGIES = {
     return colourGradient(from, to, count);
   },
 
-  "random": (random, background, count) => range(count)
-    .map(() => pickDifferent(random, HUE, background)),
+  /*"random": (random, background, count) => range(count)
+    .map(() => pickDifferent(random, HUE, background)),*/
 };
 
 const STROKE_COLOUR_STRATEGIES = {
   "none": (random, background, fills, count) => false,
 
-  "fill colour": (random, background, fills, count) => fills,
+  //"fill colour": (random, background, fills, count) => fills,
 
   // This is too confusing when rendered.
   /*"background colour": (random, background, fills, count) => Array(count)
     .fill(background),*/
 
-  "alternating": (random, background, fills, count) => alternateChoices(
+  /*"alternating": (random, background, fills, count) => alternateChoices(
     random,
     count,
     HUE,
@@ -343,11 +344,11 @@ const STROKE_COLOUR_STRATEGIES = {
   },
 
   "random but not fill or bg":(random, background, fills, count) => range(count)
-    .map(i => pickDifferent(random, HUE, [background, fills[i]]))
+    .map(i => pickDifferent(random, HUE, [background, fills[i]]))*/
 };
 
-const SCALE_MIN = 1.0;
-const SCALE_MAX = 1.75;
+const SCALE_MIN = 1.1;
+const SCALE_MAX = 1.5;
 const SCALE_RANGE = SCALE_MAX - SCALE_MIN;
 
 const SCALE_STRATEGIES = {
@@ -368,10 +369,10 @@ const SCALE_STRATEGIES = {
     .map(() => (random.random_dec() * SCALE_RANGE) + SCALE_MIN),
 
   "little to big": (random, count) => range(count)
-    .map(i => SCALE_MIN + i * (SCALE_RANGE / count)),
+    .map(i => SCALE_MIN + (i * (SCALE_RANGE / count))),
 
   "big to little": (random, count) => range(count)
-    .map(i => SCALE_MAX - i * (SCALE_RANGE / count)),
+    .map(i => SCALE_MAX - (i * (SCALE_RANGE / count))),
 };
 
 const CASE_STRATEGIES = {
@@ -385,7 +386,7 @@ const CASE_STRATEGIES = {
 
   "alternating": (random, count) => alternate(count, "uppercase", "lowercase"),
 
-  "random": (random, count) => range(count).map(i => pick(random, LETTER_CASE))
+  //"random": (random, count) => range(count).map(i => pick(random, LETTER_CASE))
 };
 
 const FONT_STRATEGIES = {
