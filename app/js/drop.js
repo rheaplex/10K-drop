@@ -1,3 +1,6 @@
+/* global decomp FONTS genStyles Matter opentype Random svgcanvas TextEncoder
+   URLSearchParams view */
+
 ////////////////////////////////////////////////////////////////////////
 // Imports
 ////////////////////////////////////////////////////////////////////////
@@ -41,8 +44,8 @@ const RENDER_TIME_MILLIS  = RENDER_TIME_SECONDS * 1000;
 ////////////////////////////////////////////////////////////////////////
 
 let canvas;
-let canvasCtx;
-let backgroundColour;
+let ctx;
+let background;
 let rendering;
 // The work id.
 let id;
@@ -62,11 +65,11 @@ const ks = [];
 // Convert the canvas to saveable image formats.
 ////////////////////////////////////////////////////////////////////////
 
-const toPng = () => canvas.toDataURL();
+const toPng = () => document.getElementById("c").toDataURL();
 
-const toSvg = () => {
-  const ctx = new svgcanvas.Context(WIDTH, HEIGHT);
-  render(ctx);
+const toSvg = (backgroundColour) => {
+  background = createFill(WIDTH, HEIGHT, backgroundColour);
+  render();
   const svg = encodeURIComponent(ctx.getSerializedSvg());
   return `data:image/svg+xml;charset=utf-8,${svg}`;
 };
@@ -76,8 +79,8 @@ const toSvg = () => {
 // Main rendering loop
 ////////////////////////////////////////////////////////////////////////
 
-const render = (ctx) => {
-  ctx.fillStyle = backgroundColour;
+const render = () => {
+  ctx.fillStyle = background;
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
   for (const k of ks) {
     if (! k.body.render.visible) {
@@ -104,7 +107,7 @@ const render = (ctx) => {
 const loop = () => {
   if (rendering) {
     Engine.update(engine, 16);
-    render(canvasCtx);
+    render();
     window.requestAnimationFrame(loop);
   }
 };
@@ -132,12 +135,13 @@ const fetchFonts = async () => {
   }
 };
 
-const createCanvas = () => {
+const createCanvas = (backgroundColour) => {
   canvas = document.createElement('canvas');
   canvas.width = WIDTH;
   canvas.height = HEIGHT;
   document.body.appendChild(canvas);
-  canvasCtx = canvas.getContext('2d');
+  ctx = canvas.getContext('2d');
+  background = createFill(WIDTH, HEIGHT, backgroundColour);
 };
 
 // This is utility code but it's only used here so it goes here.
@@ -235,6 +239,70 @@ const createBody = (glyph, x, y, scale, look) => {
   return [ body, offset ];
 };
 
+const gradientCoordsForDirection = (width, height, direction) => {
+  switch (direction) {
+  case "n":
+    return { x1: 0, y1: 0, x2: 0, y2: height};
+    break;
+  case "ne":
+    return{ x1: 0, y1: 0, x2: width, y2: height};
+    break;
+  case "e":
+    return{ x1: 0, y1: 0, x2: width, y2: 0};
+    break;
+  case "se":
+    return{ x1: 0, y1: height, x2: width, y2: 0};
+    break;
+  case "s":
+    return{ x1: 0, y1: height, x2: 0, y2: 0};
+    break;
+  case "sw":
+    return{ x1: width, y1: height, x2: 0, y2: 0};
+    break;
+  case "w":
+    return{ x1: width, y1: 0, x2: 0, y2: 0};
+    break;
+  case "nw":
+  default:
+    return{ x1: width, y1: height, x2: 0, y2: height};
+    break;
+  }
+};
+
+const createFill = (width, height, style) => {
+  switch (style.paint) {
+  case "two stripes":
+    const coords1 = gradientCoordsForDirection(width, height, style.direction);
+    const gradient1 = ctx.createLinearGradient(
+      coords1.x1,
+      coords1.y1,
+      coords1.x2,
+      coords1.y2
+    );
+    gradient1.addColorStop(0, style.with[0]);
+    gradient1.addColorStop(0.5, style.with[0]);
+    gradient1.addColorStop(0.5000001, style.with[1]);
+    gradient1.addColorStop(1, style.with[1]);
+    return gradient1;
+    break;
+  case "gradient":
+    const coords2 = gradientCoordsForDirection(width, height, style.direction);
+    const gradient2 = ctx.createLinearGradient(
+      coords2.x1,
+      coords2.y1,
+      coords2.x2,
+      coords2.y2
+    );
+    gradient2.addColorStop(0, style.with[0]);
+    gradient2.addColorStop(1, style.with[1]);
+    return gradient2;
+    break;
+  case "flat":
+  default:
+    return style.with[0];
+    break;
+  }
+};
 
 ////////////////////////////////////////////////////////////////////////
 // Create the scene.
@@ -274,7 +342,7 @@ const createKs = (styles) => {
     );
     Composite.add(engine.world, [body]);
     const options = {
-      fill: style.fillColour
+      fill: createFill(FONT_SIZE_BASE, FONT_SIZE_BASE, style.fill)
     };
     if (style.strokeColour) {
       options.stroke = style.strokeColour;
@@ -296,20 +364,14 @@ const createKs = (styles) => {
   }
 };
 
-const createScene = () => {
-  let styles;
-  [backgroundColour, styles] = genStyles(random, NUM_KS);
-  createKs(styles);
-};
-
 
 ////////////////////////////////////////////////////////////////////////
 // Main flow of execution
 ////////////////////////////////////////////////////////////////////////
 
-const capturePreview = () => {
+const capturePreview = (backgroundColour) => {
   window.$artifact = {
-    preview: toSvg() //toPng();
+    preview: toSvg(backgroundColour) //toPng();
   };
   console.info("###verse-preview-capture");
 };
@@ -319,7 +381,7 @@ const processParameters = () => {
   const q = params.get("payload");
   const p = JSON.parse(q ? atob(q) : "{}");
   //hash = p.hash || (Math.random() + 1).toString(16).substring(2);
-  id = p.editionNumber || params.get("id");
+  id = p.editionNumber || params.get("id") || 0;
   createPreview = params.get("machine") || false;
 };
 
@@ -328,22 +390,22 @@ const processParameters = () => {
 
 // The outer function curlies are just for indentation formatting.
 
-const renderLoop = () => {
+const renderLoop = (backgroundColour) => {
   rendering = true;
   window.requestAnimationFrame(loop);
   setTimeout(() => {
     rendering = false;
     if (createPreview) {
-      capturePreview();
+      capturePreview(backgroundColour);
     }
   }, RENDER_TIME_MILLIS);
 };
 
-const renderPreview = () => {
+const renderPreview = (backgroundColour) => {
   for (let i = 0; i < 60 * RENDER_TIME_SECONDS; i++) {
     Engine.update(engine, 16);
   }
-  capturePreview();
+  capturePreview(backgroundColour);
   const img = document.createElement("img");
   img.setAttribute("width", "100%");
   img.setAttribute("height", "auto");
@@ -357,13 +419,18 @@ const main = async () => {
   await fetchFonts();
   processParameters();
   await createPrng();
-  createEngine();
-  createScene();
-  Composite.add(engine.world, createBounds());
+  const [ backgroundColour, styles ] = genStyles(random, NUM_KS);
   if (! createPreview) {
-    createCanvas();
-    renderLoop();
+    createCanvas(backgroundColour);
   } else {
-    renderPreview();
+    ctx = new svgcanvas.Context({ width: WIDTH, height: HEIGHT });
+  }
+  createEngine();
+  Composite.add(engine.world, createBounds());
+  createKs(styles);
+  if (! createPreview) {
+    renderLoop(backgroundColour);
+  } else {
+    renderPreview(backgroundColour);
   }
 };

@@ -9,17 +9,17 @@ const showPreview = async () => {
   }
   document.getElementById("currentEdition").value = id;
   await createPrng();
+  const [ backgroundColour, styles ] = genStyles(random, NUM_KS);
+  ctx = new svgcanvas.Context({ width: WIDTH, height: HEIGHT });
   createEngine();
-  createScene();
+  createKs(styles);
   Composite.add(engine.world, createBounds());
-  renderPreview();
+  renderPreview(backgroundColour);
 };
 
 const next = () => {
   auto = false;
-  console.log([id, EDITION_SIZE]);
   if (id < EDITION_SIZE) {
-    console.log("next");
     id++;
     showPreview();
   }

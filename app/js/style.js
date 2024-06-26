@@ -184,8 +184,8 @@ const STROKE_WIDTH = [
 const FONTS = {
   "Alfa-Slab-One-regular-400": "AlfaSlabOne-Regular.ttf",
   "Merriweather-regular-400": "u-440qyriQwlOrhSvowK_l5Oew.ttf",
-  //FIXME: Replace with font without curves that thwart collision detection.
-  //"Noto-Serif-Black": "NotoSerif-Black.ttf",
+  //////FIXME: Replace with font without curves that thwart collision detection.
+  "Noto-Serif-Black": "NotoSerif-Black.ttf",
   "Roboto-normal-900": "KFOlCnqEu92Fr1MmYUtvAw.ttf",
   "Roboto-mono-regular-400": "RobotoMono-Regular.ttf",
   "Orbitron-Medium-regular-400": "Orbitron-Medium.ttf",
@@ -282,25 +282,46 @@ const colourGradient = (from, to, steps) => {
 
 
 ////////////////////////////////////////////////////////////////////////
+// Fill specs.
+////////////////////////////////////////////////////////////////////////
+
+const fillSpec = (kind, withColours) => {
+  return {
+    paint: kind,
+    with: withColours
+  };
+};
+
+const gradientSpec = (random, kind, withColours) => {
+  const spec = fillSpec(kind, withColours);
+  spec.direction = pick(random, [ "n", "ne", "e", "se", "s", "sw", "w", "nw" ]);
+  return spec;
+};
+
+////////////////////////////////////////////////////////////////////////
 // Generator strategies.
 ////////////////////////////////////////////////////////////////////////
 
 const FILL_COLOUR_STRATEGIES = {
   "all the same": (random, background, count) => Array(count)
-    .fill(pickDifferent(random, HUE, background)),
+    .fill(fillSpec("flat", [ pickDifferent(random, HUE, background.with) ])),
 
   "half & half": (random, background, count) => {
-    const first = pickDifferent(random, HUE, background);
-    return Array(count).fill(first, 0, count / 2)
-      .fill(pickDifferent(random, HUE, [background, first]), count / 2);
+    const first = pickDifferent(random, HUE, background.with);
+    const second = pickDifferent(random,
+                                 HUE,
+                                 background.with.concat([ first ]));
+    return Array(count)
+    .fill(fillSpec("flat", [ first ]), 0, count / 2)
+    .fill(fillSpec("flat", [ second ]), count / 2);
   },
 
   "alternating": (random, background, count) => alternateChoices(
     random,
     count,
     HUE,
-    [ background ]
-  ),
+    background.with
+  ).map(colour => fillSpec("flat", [ colour ])),
 
   /*"two of each": (random, background, count) => {
     let colours = [];
@@ -311,14 +332,33 @@ const FILL_COLOUR_STRATEGIES = {
     return colours;
   },*/
 
-  "gradient": (random, background, count) => {
-    const from = pickDifferent(random, HUE, background);
-    const to = pickDifferent(random, HUE, [ background, from ]);
-    return colourGradient(from, to, count);
+  "tween": (random, background, count) => {
+    const from = pickDifferent(random, HUE, background.with);
+    const to = pickDifferent(random, HUE, background.with.concat([ from ]));
+    return colourGradient(from, to, count)
+      .map(colour => fillSpec("flat", [ colour ]));
   },
 
   /*"random": (random, background, count) => range(count)
     .map(() => pickDifferent(random, HUE, background)),*/
+
+  "gradient": (random, background, count) => {
+    const first = pickDifferent(random, HUE, background.with);
+    return new Array(count).fill(
+      gradientSpec(random, "gradient", [
+        first,
+        pickDifferent(random, HUE, background.with.concat([ first ]))
+      ]));
+  },
+
+  "two stripes": (random, background, count) => {
+    const first = pickDifferent(random, HUE, background.with);
+    return new Array(count).fill(
+      gradientSpec(random, "two stripes", [
+        first,
+        pickDifferent(random, HUE, background.with.concat([ first ]))
+      ]));
+  },
 };
 
 const STROKE_COLOUR_STRATEGIES = {
@@ -334,11 +374,11 @@ const STROKE_COLOUR_STRATEGIES = {
     random,
     count,
     HUE,
-    fills.concat([background])
+    fills.concat(background)
   ),
 
-  "gradient": (random, background, fills, count) => {
-    const from = pickDifferent(random, HUE, fills.concat([background]));
+  "tween": (random, background, fills, count) => {
+    const from = pickDifferent(random, HUE, fills.concat(background));
     const to = pickDifferent(random, HUE, fills.concat([ background, from ]));
     return colourGradient(from, to, count);
   },
@@ -410,6 +450,26 @@ const FONT_STRATEGIES = {
   }
 };
 
+const BACKGROUND_STRATEGIES = {
+  "single colour": (random) => ({ paint: "flat", with: [ pick(random, HUE) ] }),
+  "gradient": (random) => {
+    const first = pick(random, HUE);
+    return {
+      paint: "gradient",
+      direction: pick(random, [ "n", "ne", "e", "se", "s", "sw", "w", "nw" ]),
+      with: [ first, pickDifferent(random, HUE, [ first ]) ]
+    };
+  },
+  "two stripes": (random) => {
+    const first = pick(random, HUE);
+    return {
+      paint: "two stripes",
+      direction: pick(random, [ "n", "ne", "e", "se", "s", "sw", "w", "nw" ]),
+      with: [ first, pickDifferent(random, HUE, [ first ]) ]
+    };
+  },
+};
+
 
 ////////////////////////////////////////////////////////////////////////
 // Main flow of execution
@@ -418,7 +478,10 @@ const FONT_STRATEGIES = {
 // The image background colour.
 
 const genBackground = (random) => {
-  return pick(random, HUE);
+  const backgroundStrategy = pick(random, Object.keys(BACKGROUND_STRATEGIES));
+  const background = BACKGROUND_STRATEGIES[backgroundStrategy](random);
+  //console.log([backgroundStrategy, background]);
+  return background;
 };
 
 // The style for each K .
@@ -447,7 +510,7 @@ const generateProperties = (random, backgroundColour, count) => {
   const fonts = FONT_STRATEGIES[fontStrategy](random, count);
   const caseStrategy = pick(random, Object.keys(CASE_STRATEGIES));
   const cases = CASE_STRATEGIES[caseStrategy](random, count);
-  console.log({
+  /*console.log({
     fill: fillColourStrategy,
     stroke: strokeColourStrategy,
     strokeWidth: strokeWidths[0],
@@ -455,7 +518,7 @@ const generateProperties = (random, backgroundColour, count) => {
     font: fontStrategy,
     case: caseStrategy
   });
-  console.log([fillColours, strokeColours, strokeWidths, scales, fonts, cases]);
+  console.log([fillColours, strokeColours, strokeWidths, scales, fonts, cases]);*/
   return [fillColours, strokeColours, strokeWidths, scales, fonts, cases];
 };
 
@@ -466,16 +529,16 @@ const genStyles = (random, count) => {
   const styles = [];
   for (let i = 0; i < count; i++) {
     const style = {
-      fillColour: fillColours[i],
+      fill: fillColours[i],
       scale: scales[i],
       fontName: fonts[i],
       case: cases[i]
     };
     if (strokeColours) {
-      style.strokeColour = strokeColours[i];
+      style.stroke = strokeColours[i];
       style.strokeWidth = strokeWidths[i];
     } else {
-      style.strokeColour = false;
+      style.stroke = false;
     }
     styles.push(style);
   }

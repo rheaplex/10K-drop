@@ -982,7 +982,7 @@ var Context = (function () {
             x2 : x2+"px",
             y1 : y1+"px",
             y2 : y2+"px",
-            "gradientUnits" : "userSpaceOnUse"
+            "gradientUnits" : "objectBoundingBox"
         }, false);
         this.__defs.appendChild(grad);
         return new CanvasGradient(grad, this);
