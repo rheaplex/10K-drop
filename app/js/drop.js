@@ -67,9 +67,30 @@ const ks = [];
 
 const toPng = () => document.getElementById("c").toDataURL();
 
+// Transform the k gradients so they match the transformed paths,
+// matching the canvas gradient appearance in svg.
+// This function uses internal knowledge of svgcanvas.
+const transformGradients = () => {
+  const defs = ctx.__defs;
+  // If we have k gradients, rather than no gradients or
+  // just the bacground gradient.
+  if (defs.children.length > 1) {
+    // The background gradient is last in the defs, so we skip it.
+    for (let i = 0; i < NUM_KS; i++) {
+      const gradient = defs.children[i];
+      const body = ks[i].body;
+      gradient.setAttribute(
+        "gradientTransform",
+        `translate(${body.position.x}, ${body.position.y}) rotate(${body.angle})`
+      );
+    }
+  }
+};
+
 const toSvg = (backgroundColour) => {
   background = createFill(WIDTH, HEIGHT, backgroundColour);
   render();
+  transformGradients();
   const svg = encodeURIComponent(ctx.getSerializedSvg());
   return `data:image/svg+xml;charset=utf-8,${svg}`;
 };
@@ -81,6 +102,7 @@ const toSvg = (backgroundColour) => {
 
 const render = () => {
   ctx.fillStyle = background;
+  ctx.beginPath();
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
   for (const k of ks) {
     if (! k.body.render.visible) {
