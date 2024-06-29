@@ -43,17 +43,18 @@ const RENDER_TIME_MILLIS  = RENDER_TIME_SECONDS * 1000;
 // State.
 ////////////////////////////////////////////////////////////////////////
 
-let canvas;
-let ctx;
 let background;
-let rendering;
+
 // The work id.
 let id;
 let createPreview;
+let rendering;
+
 // Our prng.
 let random;
 // The Matter.js engine. We manage its updates manually.
 let engine;
+
 // The opentype.js font objects representing the fonts we use.
 const fonts = {};
 // The Ks to drop. Includes styling, physics simulation, and
@@ -62,10 +63,8 @@ const ks = [];
 
 
 ////////////////////////////////////////////////////////////////////////
-// Convert the canvas to saveable image formats.
+// Render to SVG.
 ////////////////////////////////////////////////////////////////////////
-
-const toPng = () => document.getElementById("c").toDataURL();
 
 // Transform the k gradients so they match the transformed paths,
 // matching the canvas gradient appearance in svg.
@@ -87,9 +86,24 @@ const transformGradients = () => {
   }
 };
 
-const toSvg = (backgroundColour) => {
-  background = createFill(WIDTH, HEIGHT, backgroundColour);
-  render();
+const renderSvg = (backgroundColour) => {
+  const background = createFill(ctx, WIDTH, HEIGHT, backgroundColour);
+  for (const k of ks) {
+    ctx.translate(
+      k.body.position.x,
+      k.body.position.y
+    );
+    ctx.rotate(k.body.angle);
+    k.glyph.draw(
+      ctx,
+      0, //k.offset.x,
+      0, //k.offset.y,
+      k.size,
+      k.options,
+      k.font
+    );
+    ctx.restore();
+  }
   transformGradients();
   const svg = encodeURIComponent(ctx.getSerializedSvg());
   return `data:image/svg+xml;charset=utf-8,${svg}`;
@@ -97,18 +111,66 @@ const toSvg = (backgroundColour) => {
 
 
 ////////////////////////////////////////////////////////////////////////
-// Main rendering loop
+// Canvas animation rendering.
+// Render to offsceen canvas images for speed of painting them later.
 ////////////////////////////////////////////////////////////////////////
 
-const render = () => {
-  ctx.fillStyle = background;
+const createOffscreenBackground = (backgroundColour) => {
+  const canvas = document.createElement('canvas');
+  canvas.width = WIDTH;
+  canvas.height = HEIGHT;
+  const ctx = canvas.getContext('2d');
+  const fill = createFill(ctx, WIDTH, HEIGHT, backgroundColour);
+  ctx.fillStyle = fill;
   ctx.beginPath();
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
+  background = canvas;
+};
+
+const createCanvas = () => {
+  const canvas = document.createElement('canvas');
+  canvas.width = WIDTH;
+  canvas.height = HEIGHT;
+  canvas.id = "c";
+  document.body.appendChild(canvas);
+};
+
+const createOffscreenK = (k) => {
+  const canvas = document.createElement('canvas');
+  canvas.width = (k.glyph.xMax - k.glyph.xMin) * k.glyphUnitScale;
+  canvas.height = (k.glyph.yMax - k.glyph.yMin) * k.glyphUnitScale;
+  const ctx = canvas.getContext('2d');
+  const options = {
+    fill: createFill(ctx, FONT_SIZE_BASE, FONT_SIZE_BASE, k.style.fill)
+  };
+  /*if (style.strokeColour) {
+    options.stroke = style.strokeColour;
+    options.strokeWidth = style.strokeWidth;
+  }*/
+  k.glyph.draw(
+    ctx,
+    - k.leftOffset,
+    canvas.height,
+    k.size,
+    options,
+    k.font
+  );
+  /*ctx.beginPath();
+  ctx.fill = 'none';
+  ctx.strokeStyle = 'red';
+  ctx.lineWidth = 10;
+  ctx.strokeRect(0, 0, canvas.width, canvas.height);*/
+  k.image = canvas;
+};
+
+const renderCanvas = () => {
+  const ctx = document.getElementById("c").getContext("2d");
+  ctx.drawImage(background, 0, 0);
   for (const k of ks) {
     if (! k.body.render.visible) {
       continue;
     }
-    ctx.save();
+    /*ctx.save();
     ctx.translate(
       k.body.position.x,
       k.body.position.y
@@ -122,17 +184,36 @@ const render = () => {
       k.options,
       k.font
     );
+    ctx.restore();*/
+    ctx.save();
+    ctx.translate(
+      k.body.position.x,
+      k.body.position.y
+    );
+    ctx.rotate(k.body.angle);
+    ctx.drawImage(
+      k.image,
+     k.offset.x  + k.leftOffset,
+      -(k.image.height - k.offset.y)
+    );
     ctx.restore();
   }
 };
 
-const loop = () => {
+const renderCanvasLoop = () => {
   if (rendering) {
     Engine.update(engine, 16);
-    render();
-    window.requestAnimationFrame(loop);
+    renderCanvas();
+    window.requestAnimationFrame(renderLoop);
   }
 };
+
+
+////////////////////////////////////////////////////////////////////////
+// Render to PNG.
+////////////////////////////////////////////////////////////////////////
+
+const toPng = () => document.getElementById("c").toDataURL();
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -155,15 +236,6 @@ const fetchFonts = async () => {
   for (let i = 0; i < fontNames.length; i++) {
     fonts[fontNames[i]] = result[i];
   }
-};
-
-const createCanvas = (backgroundColour) => {
-  canvas = document.createElement('canvas');
-  canvas.width = WIDTH;
-  canvas.height = HEIGHT;
-  document.body.appendChild(canvas);
-  ctx = canvas.getContext('2d');
-  background = createFill(WIDTH, HEIGHT, backgroundColour);
 };
 
 // This is utility code but it's only used here so it goes here.
@@ -203,34 +275,21 @@ const createBounds = () => [
   Bodies.rectangle(WIDTH / 2, HEIGHT + 500, WIDTH, 1000, {
     isStatic: true,
     staticFriction: 200,
-    render: {
-      visible: false
-    }
+    render: { visible: false }
   }),
   // Left
   Bodies.rectangle(-1, 0, 1, 9999, {
     isStatic: true,
-    render: {
-      visible: false
-    }
+    render: { visible: false }
   }),
   // Right
   Bodies.rectangle(WIDTH + 1, 0, 1, 9999, {
     isStatic: true,
-    render: {
-      visible: false
-    }
+    render: { visible: false }
   }),
 ];
 
 const createBody = (glyph, x, y, scale, look) => {
-  const render = {
-    fillStyle: look.fillColour
-  };
-  if (look.strokeColour) {
-    render.strokeStyle = look.strokeColour;
-    render.lineWidth = look.strokeWidth;
-  }
   // We call pathToVertices each time as the results are consumed
   // by the next Vertices function calls..
   const vertices = Vertices.fromPath(glyph.toSVG());
@@ -242,7 +301,6 @@ const createBody = (glyph, x, y, scale, look) => {
     y,
     vertices,
     {
-      render: render,
       // Make sure the physics simulations isn't too bouncy/slidey.
       friction: 0.7,
       density: scale * 10,
@@ -291,7 +349,7 @@ const gradientCoordsForDirection = (width, height, direction) => {
   }
 };
 
-const createFill = (width, height, style) => {
+const createFill = (ctx, width, height, style) => {
   switch (style.paint) {
   case "two stripes":
     const coords1 = gradientCoordsForDirection(width, height, style.direction);
@@ -344,6 +402,7 @@ const createKs = (styles) => {
       0,
       fontSize
     );
+    console.log(glyph);
     // The formula for scaling from truetype units (e.g 0..2048) to
     // font size units (e.g. 0..72).
     const glyphUnitScale = 1 / font.unitsPerEm * fontSize;
@@ -363,20 +422,14 @@ const createKs = (styles) => {
       style
     );
     Composite.add(engine.world, [body]);
-    const options = {
-      fill: createFill(FONT_SIZE_BASE, FONT_SIZE_BASE, style.fill)
-    };
-    if (style.strokeColour) {
-      options.stroke = style.strokeColour;
-      options.strokeWidth = style.strokeWidth;
-    }
     const k = {
       body: body,
       font: font,
       size: fontSize,
       glyph: glyph,
       style: style,
-      options: options,
+      leftOffset: leftOffset,
+      glyphUnitScale: glyphUnitScale,
       // The offsets to draw the glyph outlines correctly after all
       // other transformations have been applied.
       // See the comments in this function and in createBody(), above.
@@ -393,7 +446,7 @@ const createKs = (styles) => {
 
 const capturePreview = (backgroundColour) => {
   window.$artifact = {
-    preview: toSvg(backgroundColour) //toPng();
+    preview: renderSvg(backgroundColour) //toPng();
   };
   console.info("###verse-preview-capture");
 };
@@ -414,7 +467,7 @@ const processParameters = () => {
 
 const renderLoop = (backgroundColour) => {
   rendering = true;
-  window.requestAnimationFrame(loop);
+  window.requestAnimationFrame(renderCanvasLoop);
   setTimeout(() => {
     rendering = false;
     if (createPreview) {
@@ -444,6 +497,7 @@ const main = async () => {
   const [ backgroundColour, styles ] = genStyles(random, NUM_KS);
   if (! createPreview) {
     createCanvas(backgroundColour);
+    createOffscreenBackground(backgroundColour);
   } else {
     ctx = new svgcanvas.Context({ width: WIDTH, height: HEIGHT });
   }
@@ -451,6 +505,9 @@ const main = async () => {
   Composite.add(engine.world, createBounds());
   createKs(styles);
   if (! createPreview) {
+    for (const k of ks) {
+      createOffscreenK(k);
+    }
     renderLoop(backgroundColour);
   } else {
     renderPreview(backgroundColour);
