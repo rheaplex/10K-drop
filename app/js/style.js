@@ -231,7 +231,7 @@ const pick = (random, items) => items[random.random_int(0, items.length - 1)];
 const pickDifferent = (random, items, excludes) => {
   const picked = pick(random, items); //.filter(x => ! exclude.includes(x)));
   if (typeof(excludes) == 'string') {
-    excludes = [excludes];
+    excludes = [ excludes ];
   }
   // Not tail recursive ;-(
   for (const exclude of excludes) {
@@ -298,6 +298,16 @@ const gradientSpec = (random, kind, withColours) => {
   return spec;
 };
 
+const patternSpec = (random, withColours) => {
+  const spec = gradientSpec(
+    random,
+    "pattern",
+    withColours
+  );
+  spec.kind = pick(random, [ "spot", "box", "check", "stripe" ]);
+  return spec;
+};
+
 ////////////////////////////////////////////////////////////////////////
 // Generator strategies.
 ////////////////////////////////////////////////////////////////////////
@@ -346,6 +356,15 @@ const FILL_COLOUR_STRATEGIES = {
     const first = pickDifferent(random, HUE, background.with);
     return new Array(count).fill(
       gradientSpec(random, "gradient", [
+        first,
+        pickDifferent(random, HUE, background.with.concat([ first ]))
+      ]));
+  },
+
+  "pattern": (random, background, count) => {
+    const first = pickDifferent(random, HUE, background.with);
+    return new Array(count).fill(
+      patternSpec(random, [
         first,
         pickDifferent(random, HUE, background.with.concat([ first ]))
       ]));
@@ -468,6 +487,13 @@ const BACKGROUND_STRATEGIES = {
       with: [ first, pickDifferent(random, HUE, [ first ]) ]
     };
   },
+  "pattern": (random) => {
+    const first = pick(random, HUE);
+    return patternSpec(random, [
+        first,
+        pickDifferent(random, HUE, [ first ])
+      ]);
+  },
 };
 
 
@@ -480,7 +506,7 @@ const BACKGROUND_STRATEGIES = {
 const genBackground = (random) => {
   const backgroundStrategy = pick(random, Object.keys(BACKGROUND_STRATEGIES));
   const background = BACKGROUND_STRATEGIES[backgroundStrategy](random);
-  //console.log([backgroundStrategy, background]);
+  console.log([backgroundStrategy, background]);
   return background;
 };
 
@@ -510,7 +536,7 @@ const generateProperties = (random, backgroundColour, count) => {
   const fonts = FONT_STRATEGIES[fontStrategy](random, count);
   const caseStrategy = pick(random, Object.keys(CASE_STRATEGIES));
   const cases = CASE_STRATEGIES[caseStrategy](random, count);
-  /*console.log({
+  console.log({
     fill: fillColourStrategy,
     stroke: strokeColourStrategy,
     strokeWidth: strokeWidths[0],
@@ -518,7 +544,7 @@ const generateProperties = (random, backgroundColour, count) => {
     font: fontStrategy,
     case: caseStrategy
   });
-  console.log([fillColours, strokeColours, strokeWidths, scales, fonts, cases]);*/
+  console.log([fillColours, strokeColours, strokeWidths, scales, fonts, cases]);
   return [fillColours, strokeColours, strokeWidths, scales, fonts, cases];
 };
 

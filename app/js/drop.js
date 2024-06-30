@@ -1,5 +1,5 @@
 /* global decomp FONTS genStyles Matter opentype Random svgcanvas TextEncoder
-   URLSearchParams view */
+   URLSearchParams XMLSerializer */
 
 ////////////////////////////////////////////////////////////////////////
 // Imports
@@ -15,7 +15,14 @@ let Engine    = Matter.Engine,
 
 
 ////////////////////////////////////////////////////////////////////////
-// Configuration.
+// Constants.
+////////////////////////////////////////////////////////////////////////
+
+const RAD2DEG = 180 / Math.PI;
+
+
+////////////////////////////////////////////////////////////////////////
+// Configuration constants.
 ////////////////////////////////////////////////////////////////////////
 
 // The clue is in the project name.
@@ -35,7 +42,7 @@ const VARIANCE     = VARIANCE_MAX - VARIANCE_MIN;
 // all fall into the visible area and don't stack offscreen.
 const FONT_SIZE_BASE      = HEIGHT / 3;
 // How long to run the physics before stopping and saving.
-const RENDER_TIME_SECONDS = 30;
+const RENDER_TIME_SECONDS = 45;
 const RENDER_TIME_MILLIS  = RENDER_TIME_SECONDS * 1000;
 
 
@@ -63,32 +70,88 @@ const ks = [];
 
 
 ////////////////////////////////////////////////////////////////////////
+// Load resources, create objects.
+////////////////////////////////////////////////////////////////////////
+
+const fetchFont = async (url) => {
+  const response = await fetch(url);
+  return opentype.parse(await response.arrayBuffer());
+};
+
+// Fetch the fonts we use, in parallel.
+
+const fetchFonts = async () => {
+  const fontNames = Object.keys(FONTS);
+  let result = await Promise.all(
+    fontNames.map(async fontName =>
+      fetchFont(`./fonts/${FONTS[fontName]}`)
+    ));
+  for (let i = 0; i < fontNames.length; i++) {
+    fonts[fontNames[i]] = result[i];
+  }
+};
+
+// This is utility code but it's only used here so it goes here.
+
+const sha256Hash = async plaintext =>
+      "0x" + Array.from(
+        new Uint8Array(
+          await window.crypto.subtle.digest(
+            "SHA-256",
+            new TextEncoder().encode(plaintext)
+          ))).map((item) => item.toString(16).padStart(2, "0"))
+      .join("");
+
+const createPrng = async () => {
+  const hash = await sha256Hash(id);
+  random = new Random(hash);
+};
+
+
+////////////////////////////////////////////////////////////////////////
 // Render to SVG.
 ////////////////////////////////////////////////////////////////////////
 
 // Transform the k gradients so they match the transformed paths,
 // matching the canvas gradient appearance in svg.
 // This function uses internal knowledge of svgcanvas.
-const transformGradients = () => {
+const transformDefs = (ctx) => {
   const defs = ctx.__defs;
   // If we have k gradients, rather than no gradients or
   // just the bacground gradient.
   if (defs.children.length > 1) {
-    // The background gradient is last in the defs, so we skip it.
-    for (let i = 0; i < NUM_KS; i++) {
-      const gradient = defs.children[i];
-      const body = ks[i].body;
-      gradient.setAttribute(
-        "gradientTransform",
-        `translate(${body.position.x}, ${body.position.y}) rotate(${body.angle})`
-      );
+    for (const def of defs.children) {
+      // Don't assume order, and avoid the background.
+      const k = ks.find(b => b.options.fill.__root.id == def.id);
+      if (k) {
+        const kind = def.nodeName; // ? "gradient" : "pattern";
+        const body = k.body;
+        const x = body.position.x;
+        const y = body.position.y;
+        const angle = body.angle * RAD2DEG;
+        def.setAttribute(
+          `${kind}Transform`,
+          `translate(${x}, ${y}) rotate(${angle})`);
+        }
     }
   }
 };
 
 const renderSvg = (backgroundColour) => {
-  const background = createFill(ctx, WIDTH, HEIGHT, backgroundColour);
+  const ctx = new svgcanvas.Context({ width: WIDTH, height: HEIGHT });
+  ctx.fillStyle = createFill(ctx, WIDTH, HEIGHT, backgroundColour);
+  ctx.beginPath();
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
   for (const k of ks) {
+    ctx.save();
+    k.options  = {
+      fill: createFill(
+        ctx,
+        (k.glyph.xMax - k.glyph.xMin),
+        (k.glyph.yMax - k.glyph.yMin),
+        k.style.fill
+      )
+    };
     ctx.translate(
       k.body.position.x,
       k.body.position.y
@@ -96,22 +159,22 @@ const renderSvg = (backgroundColour) => {
     ctx.rotate(k.body.angle);
     k.glyph.draw(
       ctx,
-      0, //k.offset.x,
-      0, //k.offset.y,
+      k.offset.x,
+      k.offset.y,
       k.size,
       k.options,
       k.font
     );
     ctx.restore();
   }
-  transformGradients();
+  transformDefs(ctx);
   const svg = encodeURIComponent(ctx.getSerializedSvg());
   return `data:image/svg+xml;charset=utf-8,${svg}`;
 };
 
 
 ////////////////////////////////////////////////////////////////////////
-// Canvas animation rendering.
+// Render to canvas.
 // Render to offsceen canvas images for speed of painting them later.
 ////////////////////////////////////////////////////////////////////////
 
@@ -213,50 +276,14 @@ const renderCanvasLoop = () => {
 // Render to PNG.
 ////////////////////////////////////////////////////////////////////////
 
-const toPng = () => document.getElementById("c").toDataURL();
-
-
-////////////////////////////////////////////////////////////////////////
-// Load configuration and resources, create objects.
-////////////////////////////////////////////////////////////////////////
-
-const fetchFont = async (url) => {
-  const response = await fetch(url);
-  return opentype.parse(await response.arrayBuffer());
-};
-
-// Fetch the fonts we use, in parallel.
-
-const fetchFonts = async () => {
-  const fontNames = Object.keys(FONTS);
-  let result = await Promise.all(
-    fontNames.map(async fontName =>
-      fetchFont(`./fonts/${FONTS[fontName]}`)
-    ));
-  for (let i = 0; i < fontNames.length; i++) {
-    fonts[fontNames[i]] = result[i];
-  }
-};
-
-// This is utility code but it's only used here so it goes here.
-
-const sha256Hash = async plaintext =>
-      "0x" + Array.from(
-        new Uint8Array(
-          await window.crypto.subtle.digest(
-            "SHA-256",
-            new TextEncoder().encode(plaintext)
-          ))).map((item) => item.toString(16).padStart(2, "0"))
-      .join("");
-
-const createPrng = async () => {
-  const hash = await sha256Hash(id);
-  random = new Random(hash);
+const toPng = () => {
+  // blah
+  return document.getElementById("c").toDataURL();
 };
 
 
 ////////////////////////////////////////////////////////////////////////
-// The physics simulation
+// The physics simulation.
 ////////////////////////////////////////////////////////////////////////
 
 const createEngine = () => {
@@ -295,7 +322,6 @@ const createBody = (glyph, x, y, scale, look) => {
   const vertices = Vertices.fromPath(glyph.toSVG());
   // Scale from truetype glyph space to font pixel size.
   Vertices.scale(vertices, scale, scale);
-  //Vertices.clockwiseSort(vertices);
   const body = Bodies.fromVertices(
     x,
     y,
@@ -317,6 +343,50 @@ const createBody = (glyph, x, y, scale, look) => {
     y: body.bounds.max.y - body.position.y
   };
   return [ body, offset ];
+};
+
+
+////////////////////////////////////////////////////////////////////////
+// Fills.
+////////////////////////////////////////////////////////////////////////
+
+const createPattern = (ctx, kind, fg, bg, width, size) => {
+  let canvas;
+  let cctx;
+  if (! ctx.__root) {
+    canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = width;
+    cctx = canvas.getContext('2d');
+  } else {
+    cctx = new svgcanvas.Context({ width: width, height: width });
+  }
+  cctx.fillStyle = bg;
+  cctx.beginPath();
+  cctx.fillRect(0, 0, width, width);
+  cctx.fillStyle = fg;
+  cctx.beginPath();
+  switch(kind) {
+  case "spot":
+    cctx.arc(width / 2, width / 2, size / 2, 0, 2 * Math.PI);
+    cctx.fill();
+    break;
+  case "box":
+    cctx.fillRect(0, 0, width / 2, width / 2);
+    break;
+  case "check":
+    cctx.fillRect(0, 0, width / 2, width / 2);
+    cctx.fillRect(width / 2, width / 2, width / 2, width / 2);
+    break;
+  case "stripe":
+    cctx.fillRect(0, 0, width, width / 2);
+    break;
+  };
+  if (canvas) {
+    return ctx.createPattern(canvas, "repeat");
+  } else {
+    return ctx.createPattern(cctx, "repeat");
+  }
 };
 
 const gradientCoordsForDirection = (width, height, direction) => {
@@ -350,6 +420,7 @@ const gradientCoordsForDirection = (width, height, direction) => {
 };
 
 const createFill = (ctx, width, height, style) => {
+  let fill;
   switch (style.paint) {
   case "two stripes":
     const coords1 = gradientCoordsForDirection(width, height, style.direction);
@@ -363,7 +434,7 @@ const createFill = (ctx, width, height, style) => {
     gradient1.addColorStop(0.5, style.with[0]);
     gradient1.addColorStop(0.5000001, style.with[1]);
     gradient1.addColorStop(1, style.with[1]);
-    return gradient1;
+    fill = gradient1;
     break;
   case "gradient":
     const coords2 = gradientCoordsForDirection(width, height, style.direction);
@@ -375,17 +446,30 @@ const createFill = (ctx, width, height, style) => {
     );
     gradient2.addColorStop(0, style.with[0]);
     gradient2.addColorStop(1, style.with[1]);
-    return gradient2;
+    fill = gradient2;
+    break;
+  case "pattern":
+    //const coords3 = gradientCoordsForDirection(width, height, style.direction);
+    fill = createPattern(
+      ctx,
+      style.kind,
+      style.with[0],
+      style.with[1],
+      width / 20,
+      width / 30
+    );
     break;
   case "flat":
   default:
-    return style.with[0];
+    fill = style.with[0];
     break;
   }
+  return fill;
 };
 
+
 ////////////////////////////////////////////////////////////////////////
-// Create the scene.
+// Ks.
 ////////////////////////////////////////////////////////////////////////
 
 const createKs = (styles) => {
@@ -402,7 +486,6 @@ const createKs = (styles) => {
       0,
       fontSize
     );
-    console.log(glyph);
     // The formula for scaling from truetype units (e.g 0..2048) to
     // font size units (e.g. 0..72).
     const glyphUnitScale = 1 / font.unitsPerEm * fontSize;
@@ -444,13 +527,6 @@ const createKs = (styles) => {
 // Main flow of execution
 ////////////////////////////////////////////////////////////////////////
 
-const capturePreview = (backgroundColour) => {
-  window.$artifact = {
-    preview: renderSvg(backgroundColour) //toPng();
-  };
-  console.info("###verse-preview-capture");
-};
-
 const processParameters = () => {
   const params = new URLSearchParams(window.location.search);
   const q = params.get("payload");
@@ -463,8 +539,6 @@ const processParameters = () => {
 // Stop the physics simulation after it should have settled,
 // then save if required and load the next id if saving in a loop.
 
-// The outer function curlies are just for indentation formatting.
-
 const renderLoop = (backgroundColour) => {
   rendering = true;
   window.requestAnimationFrame(renderCanvasLoop);
@@ -474,6 +548,13 @@ const renderLoop = (backgroundColour) => {
       capturePreview(backgroundColour);
     }
   }, RENDER_TIME_MILLIS);
+};
+
+const capturePreview = (backgroundColour) => {
+  window.$artifact = {
+    preview: renderSvg(backgroundColour) //toPng();
+  };
+  console.info("###verse-preview-capture");
 };
 
 const renderPreview = (backgroundColour) => {
@@ -495,16 +576,12 @@ const main = async () => {
   processParameters();
   await createPrng();
   const [ backgroundColour, styles ] = genStyles(random, NUM_KS);
-  if (! createPreview) {
-    createCanvas(backgroundColour);
-    createOffscreenBackground(backgroundColour);
-  } else {
-    ctx = new svgcanvas.Context({ width: WIDTH, height: HEIGHT });
-  }
   createEngine();
   Composite.add(engine.world, createBounds());
   createKs(styles);
   if (! createPreview) {
+    createCanvas(backgroundColour);
+    createOffscreenBackground(backgroundColour);
     for (const k of ks) {
       createOffscreenK(k);
     }

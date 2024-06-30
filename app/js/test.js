@@ -1,3 +1,8 @@
+/* global createBounds createEngine createKs createPrng
+   ctx engine fetchFonts genStyles id ks random renderPreview
+   HEIGHT NUM_KS WIDTH
+   Composite svgcanvas URLSearchParams */
+
 const DISPLAY_FOR = 2 * 1000;
 const EDITION_SIZE = 1000;
 let auto = false;
@@ -62,6 +67,7 @@ const updateCurrentEdition = (e) => {
 
 (async () => {
   await fetchFonts();
-  id = 0;
+  const params = new URLSearchParams(window.location.search);
+  id = params.get("id") || 0;
   showPreview();
 })();
