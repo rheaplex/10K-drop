@@ -144,11 +144,12 @@ const renderSvg = (backgroundColour) => {
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
   for (const k of ks) {
     ctx.save();
+    const bounds = k.glyph.getBoundingBox();
     k.options  = {
       fill: createFill(
         ctx,
-        (k.glyph.xMax - k.glyph.xMin),
-        (k.glyph.yMax - k.glyph.yMin),
+        (bounds.x2 - bounds.x1),
+        (bounds.y2 - bounds.y1),
         k.style.fill
       )
     };
@@ -200,8 +201,9 @@ const createCanvas = () => {
 
 const createOffscreenK = (k) => {
   const canvas = document.createElement('canvas');
-  canvas.width = (k.glyph.xMax - k.glyph.xMin) * k.glyphUnitScale;
-  canvas.height = (k.glyph.yMax - k.glyph.yMin) * k.glyphUnitScale;
+  const bounds = k.glyph.getBoundingBox();
+  canvas.width = (bounds.x2 - bounds.x1) * k.glyphUnitScale;
+  canvas.height =  (bounds.y2 - bounds.y1) * k.glyphUnitScale;
   const ctx = canvas.getContext('2d');
   const options = {
     fill: createFill(ctx, FONT_SIZE_BASE, FONT_SIZE_BASE, k.style.fill)
@@ -213,12 +215,12 @@ const createOffscreenK = (k) => {
   k.glyph.draw(
     ctx,
     - k.leftOffset,
-    canvas.height,
+    canvas.height + bounds.y1,
     k.size,
     options,
     k.font
   );
-  /*ctx.beginPath();
+/*  ctx.beginPath();
   ctx.fill = 'none';
   ctx.strokeStyle = 'red';
   ctx.lineWidth = 10;
