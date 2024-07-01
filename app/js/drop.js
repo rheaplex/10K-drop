@@ -124,7 +124,7 @@ const transformDefs = (ctx) => {
       // Don't assume order, and avoid the background.
       const k = ks.find(b => b.options.fill.__root.id == def.id);
       if (k) {
-        const kind = def.nodeName; // ? "gradient" : "pattern";
+        const kind = def.nodeName;
         const body = k.body;
         const x = body.position.x;
         const y = body.position.y;
@@ -203,10 +203,15 @@ const createOffscreenK = (k) => {
   const canvas = document.createElement('canvas');
   const bounds = k.glyph.getBoundingBox();
   canvas.width = (bounds.x2 - bounds.x1) * k.glyphUnitScale;
-  canvas.height =  (bounds.y2 - bounds.y1) * k.glyphUnitScale;
+  canvas.height = (bounds.y2 - bounds.y1) * k.glyphUnitScale;
   const ctx = canvas.getContext('2d');
   const options = {
-    fill: createFill(ctx, FONT_SIZE_BASE, FONT_SIZE_BASE, k.style.fill)
+    fill: createFill(
+      ctx,
+      FONT_SIZE_BASE,
+      FONT_SIZE_BASE,
+      k.style.fill
+    )
   };
   /*if (style.strokeColour) {
     options.stroke = style.strokeColour;
@@ -235,6 +240,7 @@ const renderCanvas = () => {
     if (! k.body.render.visible) {
       continue;
     }
+    // Draw glyph for debugging
     /*ctx.save();
     ctx.translate(
       k.body.position.x,
@@ -249,7 +255,24 @@ const renderCanvas = () => {
       k.options,
       k.font
     );
-    ctx.restore();*/
+    ctx.restore();
+    // Render the parts of the physics simulation body for debugging.
+    for (const part of k.body.parts.slice(1)) {
+      if (!part.render.visible) {
+        continue;
+      }
+      ctx.beginPath();
+      const vertices = part.vertices;
+      ctx.moveTo(vertices[0].x, vertices[0].y);
+      for (let j = 1; j < vertices.length; j += 1) {
+        ctx.lineTo(part.vertices[j].x, part.vertices[j].y);
+      }
+      ctx.lineTo(vertices[0].x, vertices[0].y);
+      ctx.strokeStyle = 'red';
+      ctx.fillStyle = 'none';
+      ctx.lineWidth = 5;
+      ctx.stroke();
+    }*/
     ctx.save();
     ctx.translate(
       k.body.position.x,
@@ -334,7 +357,7 @@ const createBody = (glyph, x, y, scale, look) => {
       density: scale * 10,
       //frictionStatic: 10,
       //restitution: 0.2,
-      //slop: 0.5,
+      //slop: 0.0005,
     },
     true
   );
@@ -497,7 +520,6 @@ const createKs = (styles) => {
     // using characters with descenders, so we don't have to modify
     // the bottom alignment.
     const leftOffset = glyph.getBoundingBox().x1 * glyphUnitScale;
-    // FIXME: handle stroke width? Sometimes, based on style?
     const [ body, offset ] = createBody(
       glyph,
       xVarianceOrigin + (random.random_dec() * xVariance),
