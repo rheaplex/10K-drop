@@ -182,15 +182,13 @@ const STROKE_WIDTH = [
 
 // We don't use the font names in CSS so they don't have to be accurate here.
 const FONTS = {
-  "Alfa-Slab-One-regular-400": "AlfaSlabOne-Regular.ttf",
+  //"Alfa-Slab-One-regular-400": "AlfaSlabOne-Regular.ttf",
   "Merriweather-regular-400": "u-440qyriQwlOrhSvowK_l5Oew.ttf",
-  "Noto-Serif-Black": "NotoSerif-Black.ttf",
   "Roboto-normal-900": "KFOlCnqEu92Fr1MmYUtvAw.ttf",
   "Roboto-mono-regular-400": "RobotoMono-Regular.ttf",
   "Orbitron-Medium-regular-400": "Orbitron-Medium.ttf",
-  "Montserrat-SemiBold-600": "Montserrat-SemiBold.ttf",
   "comic-ish": "TomsonTalks.otf",
-  "serif": "CormorantGaramond-Medium.ttf"
+  "roman": "DoulosSIL-Regular.ttf"
 };
 
 const LETTER_CASE = ["uppercase", "lowercase"];
