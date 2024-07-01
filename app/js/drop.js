@@ -43,7 +43,7 @@ const VARIANCE     = VARIANCE_MAX - VARIANCE_MIN;
 const FONT_SIZE_BASE      = HEIGHT / 3;
 // How long to run the physics before stopping and saving.
 const RENDER_TIME_SECONDS = 45;
-const RENDER_TIME_MILLIS  = RENDER_TIME_SECONDS * 1000;
+const NUM_TICKS  = RENDER_TIME_SECONDS * 50;
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -67,6 +67,9 @@ const fonts = {};
 // The Ks to drop. Includes styling, physics simulation, and
 // other useful information.
 const ks = [];
+
+// How many frames we've rendered.
+let ticks;
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -105,205 +108,6 @@ const sha256Hash = async plaintext =>
 const createPrng = async () => {
   const hash = await sha256Hash(id);
   random = new Random(hash);
-};
-
-
-////////////////////////////////////////////////////////////////////////
-// Render to SVG.
-////////////////////////////////////////////////////////////////////////
-
-// Transform the k gradients so they match the transformed paths,
-// matching the canvas gradient appearance in svg.
-// This function uses internal knowledge of svgcanvas.
-const transformDefs = (ctx) => {
-  const defs = ctx.__defs;
-  // If we have k gradients, rather than no gradients or
-  // just the bacground gradient.
-  if (defs.children.length > 1) {
-    for (const def of defs.children) {
-      // Don't assume order, and avoid the background.
-      const k = ks.find(b => b.options.fill.__root.id == def.id);
-      if (k) {
-        const kind = def.nodeName;
-        const body = k.body;
-        const x = body.position.x;
-        const y = body.position.y;
-        const angle = body.angle * RAD2DEG;
-        def.setAttribute(
-          `${kind}Transform`,
-          `translate(${x}, ${y}) rotate(${angle})`);
-        }
-    }
-  }
-};
-
-const renderSvg = (backgroundColour) => {
-  const ctx = new svgcanvas.Context({ width: WIDTH, height: HEIGHT });
-  ctx.fillStyle = createFill(ctx, WIDTH, HEIGHT, backgroundColour);
-  ctx.beginPath();
-  ctx.fillRect(0, 0, WIDTH, HEIGHT);
-  for (const k of ks) {
-    ctx.save();
-    const bounds = k.glyph.getBoundingBox();
-    k.options  = {
-      fill: createFill(
-        ctx,
-        (bounds.x2 - bounds.x1),
-        (bounds.y2 - bounds.y1),
-        k.style.fill
-      )
-    };
-    ctx.translate(
-      k.body.position.x,
-      k.body.position.y
-    );
-    ctx.rotate(k.body.angle);
-    k.glyph.draw(
-      ctx,
-      k.offset.x,
-      k.offset.y,
-      k.size,
-      k.options,
-      k.font
-    );
-    ctx.restore();
-  }
-  transformDefs(ctx);
-  const svg = encodeURIComponent(ctx.getSerializedSvg());
-  return `data:image/svg+xml;charset=utf-8,${svg}`;
-};
-
-
-////////////////////////////////////////////////////////////////////////
-// Render to canvas.
-// Render to offsceen canvas images for speed of painting them later.
-////////////////////////////////////////////////////////////////////////
-
-const createOffscreenBackground = (backgroundColour) => {
-  const canvas = document.createElement('canvas');
-  canvas.width = WIDTH;
-  canvas.height = HEIGHT;
-  const ctx = canvas.getContext('2d');
-  const fill = createFill(ctx, WIDTH, HEIGHT, backgroundColour);
-  ctx.fillStyle = fill;
-  ctx.beginPath();
-  ctx.fillRect(0, 0, WIDTH, HEIGHT);
-  background = canvas;
-};
-
-const createCanvas = () => {
-  const canvas = document.createElement('canvas');
-  canvas.width = WIDTH;
-  canvas.height = HEIGHT;
-  canvas.id = "c";
-  document.body.appendChild(canvas);
-};
-
-const createOffscreenK = (k) => {
-  const canvas = document.createElement('canvas');
-  const bounds = k.glyph.getBoundingBox();
-  canvas.width = (bounds.x2 - bounds.x1) * k.glyphUnitScale;
-  canvas.height = (bounds.y2 - bounds.y1) * k.glyphUnitScale;
-  const ctx = canvas.getContext('2d');
-  const options = {
-    fill: createFill(
-      ctx,
-      FONT_SIZE_BASE,
-      FONT_SIZE_BASE,
-      k.style.fill
-    )
-  };
-  /*if (style.strokeColour) {
-    options.stroke = style.strokeColour;
-    options.strokeWidth = style.strokeWidth;
-  }*/
-  k.glyph.draw(
-    ctx,
-    - k.leftOffset,
-    canvas.height + bounds.y1,
-    k.size,
-    options,
-    k.font
-  );
-/*  ctx.beginPath();
-  ctx.fill = 'none';
-  ctx.strokeStyle = 'red';
-  ctx.lineWidth = 10;
-  ctx.strokeRect(0, 0, canvas.width, canvas.height);*/
-  k.image = canvas;
-};
-
-const renderCanvas = () => {
-  const ctx = document.getElementById("c").getContext("2d");
-  ctx.drawImage(background, 0, 0);
-  for (const k of ks) {
-    if (! k.body.render.visible) {
-      continue;
-    }
-    // Draw glyph for debugging
-    /*ctx.save();
-    ctx.translate(
-      k.body.position.x,
-      k.body.position.y
-    );
-    ctx.rotate(k.body.angle);
-    k.glyph.draw(
-      ctx,
-      k.offset.x,
-      k.offset.y,
-      k.size,
-      k.options,
-      k.font
-    );
-    ctx.restore();
-    // Render the parts of the physics simulation body for debugging.
-    for (const part of k.body.parts.slice(1)) {
-      if (!part.render.visible) {
-        continue;
-      }
-      ctx.beginPath();
-      const vertices = part.vertices;
-      ctx.moveTo(vertices[0].x, vertices[0].y);
-      for (let j = 1; j < vertices.length; j += 1) {
-        ctx.lineTo(part.vertices[j].x, part.vertices[j].y);
-      }
-      ctx.lineTo(vertices[0].x, vertices[0].y);
-      ctx.strokeStyle = 'red';
-      ctx.fillStyle = 'none';
-      ctx.lineWidth = 5;
-      ctx.stroke();
-    }*/
-    ctx.save();
-    ctx.translate(
-      k.body.position.x,
-      k.body.position.y
-    );
-    ctx.rotate(k.body.angle);
-    ctx.drawImage(
-      k.image,
-     k.offset.x  + k.leftOffset,
-      -(k.image.height - k.offset.y)
-    );
-    ctx.restore();
-  }
-};
-
-const renderCanvasLoop = () => {
-  if (rendering) {
-    Engine.update(engine, 16);
-    renderCanvas();
-    window.requestAnimationFrame(renderLoop);
-  }
-};
-
-
-////////////////////////////////////////////////////////////////////////
-// Render to PNG.
-////////////////////////////////////////////////////////////////////////
-
-const toPng = () => {
-  // blah
-  return document.getElementById("c").toDataURL();
 };
 
 
@@ -548,6 +352,213 @@ const createKs = (styles) => {
 
 
 ////////////////////////////////////////////////////////////////////////
+// Render to SVG.
+////////////////////////////////////////////////////////////////////////
+
+// Transform the k gradients so they match the transformed paths,
+// matching the canvas gradient appearance in svg.
+// This function uses internal knowledge of svgcanvas.
+const transformDefs = (ctx) => {
+  const defs = ctx.__defs;
+  // If we have k gradients, rather than no gradients or
+  // just the bacground gradient.
+  if (defs.children.length > 1) {
+    for (const def of defs.children) {
+      // Don't assume order, and avoid the background.
+      const k = ks.find(b => b.options.fill.__root.id == def.id);
+      if (k) {
+        const kind = def.nodeName == "pattern" ? "pattern": "gradient";
+        const body = k.body;
+        const x = body.position.x;
+        const y = body.position.y;
+        const angle = body.angle * RAD2DEG;
+        def.setAttribute(
+          `${kind}Transform`,
+          `translate(${x}, ${y}) rotate(${angle}) translate(${k.leftOffset}, 0)`);
+        }
+    }
+  }
+};
+
+const renderSvg = (backgroundColour) => {
+  const ctx = new svgcanvas.Context({ width: WIDTH, height: HEIGHT });
+  ctx.fillStyle = createFill(ctx, WIDTH, HEIGHT, backgroundColour);
+  ctx.beginPath();
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+  for (const k of ks) {
+    ctx.save();
+    const bounds = k.glyph.getBoundingBox();
+    k.options  = {
+      fill: createFill(
+        ctx,
+        FONT_SIZE_BASE,
+        FONT_SIZE_BASE,
+        k.style.fill
+      )
+    };
+    ctx.translate(
+      k.body.position.x,
+      k.body.position.y
+    );
+    ctx.rotate(k.body.angle);
+    k.glyph.draw(
+      ctx,
+      k.offset.x,
+      k.offset.y,
+      k.size,
+      k.options,
+      k.font
+    );
+    ctx.restore();
+  }
+  transformDefs(ctx);
+  const svg = encodeURIComponent(ctx.getSerializedSvg());
+  return `data:image/svg+xml;charset=utf-8,${svg}`;
+};
+
+
+////////////////////////////////////////////////////////////////////////
+// Render to canvas.
+// Render to offsceen canvas images for speed of painting them later.
+////////////////////////////////////////////////////////////////////////
+
+const createOffscreenBackground = (backgroundColour) => {
+  const canvas = document.createElement('canvas');
+  canvas.width = WIDTH;
+  canvas.height = HEIGHT;
+  const ctx = canvas.getContext('2d');
+  const fill = createFill(ctx, WIDTH, HEIGHT, backgroundColour);
+  ctx.fillStyle = fill;
+  ctx.beginPath();
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+  background = canvas;
+};
+
+const createCanvas = () => {
+  const canvas = document.createElement('canvas');
+  canvas.width = WIDTH;
+  canvas.height = HEIGHT;
+  canvas.id = "c";
+  document.body.appendChild(canvas);
+};
+
+const createOffscreenK = (k) => {
+  const canvas = document.createElement('canvas');
+  const bounds = k.glyph.getBoundingBox();
+  canvas.width = (bounds.x2 - bounds.x1) * k.glyphUnitScale;
+  canvas.height = (bounds.y2 - bounds.y1) * k.glyphUnitScale;
+  const ctx = canvas.getContext('2d');
+  const options = {
+    fill: createFill(
+      ctx,
+      FONT_SIZE_BASE,
+      FONT_SIZE_BASE,
+      k.style.fill
+    )
+  };
+  /*if (style.strokeColour) {
+    options.stroke = style.strokeColour;
+    options.strokeWidth = style.strokeWidth;
+  }*/
+  k.glyph.draw(
+    ctx,
+    - k.leftOffset,
+    canvas.height + bounds.y1,
+    k.size,
+    options,
+    k.font
+  );
+/*  ctx.beginPath();
+  ctx.fill = 'none';
+  ctx.strokeStyle = 'red';
+  ctx.lineWidth = 10;
+  ctx.strokeRect(0, 0, canvas.width, canvas.height);*/
+  k.image = canvas;
+};
+
+const renderCanvas = () => {
+  const ctx = document.getElementById("c").getContext("2d");
+  ctx.drawImage(background, 0, 0);
+  for (const k of ks) {
+    if (! k.body.render.visible) {
+      continue;
+    }
+    // Draw glyph for debugging
+    /*ctx.save();
+    ctx.translate(
+      k.body.position.x,
+      k.body.position.y
+    );
+    ctx.rotate(k.body.angle);
+    k.glyph.draw(
+      ctx,
+      k.offset.x,
+      k.offset.y,
+      k.size,
+      k.options,
+      k.font
+    );
+    ctx.restore();
+    // Render the parts of the physics simulation body for debugging.
+    for (const part of k.body.parts.slice(1)) {
+      if (!part.render.visible) {
+        continue;
+      }
+      ctx.beginPath();
+      const vertices = part.vertices;
+      ctx.moveTo(vertices[0].x, vertices[0].y);
+      for (let j = 1; j < vertices.length; j += 1) {
+        ctx.lineTo(part.vertices[j].x, part.vertices[j].y);
+      }
+      ctx.lineTo(vertices[0].x, vertices[0].y);
+      ctx.strokeStyle = 'red';
+      ctx.fillStyle = 'none';
+      ctx.lineWidth = 5;
+      ctx.stroke();
+    }*/
+    ctx.save();
+    ctx.translate(
+      k.body.position.x,
+      k.body.position.y
+    );
+    ctx.rotate(k.body.angle);
+    ctx.drawImage(
+      k.image,
+     k.offset.x  + k.leftOffset,
+      -(k.image.height - k.offset.y)
+    );
+    ctx.restore();
+  }
+};
+
+const renderCanvasLoop = () => {
+  if (rendering) {
+    Engine.update(engine, 16);
+    renderCanvas();
+    ticks++;
+    if (ticks < NUM_TICKS) {
+      window.requestAnimationFrame(renderCanvasLoop);
+    } else {
+      rendering = false;
+      /*if (createPreview) {
+        capturePreview(backgroundColour);
+      }*/
+    }
+  }
+};
+
+
+////////////////////////////////////////////////////////////////////////
+// Render to PNG.
+////////////////////////////////////////////////////////////////////////
+
+const toPng = () => {
+  // blah
+  return document.getElementById("c").toDataURL();
+};
+
+
+////////////////////////////////////////////////////////////////////////
 // Main flow of execution
 ////////////////////////////////////////////////////////////////////////
 
@@ -560,20 +571,6 @@ const processParameters = () => {
   createPreview = params.get("machine") || false;
 };
 
-// Stop the physics simulation after it should have settled,
-// then save if required and load the next id if saving in a loop.
-
-const renderLoop = (backgroundColour) => {
-  rendering = true;
-  window.requestAnimationFrame(renderCanvasLoop);
-  setTimeout(() => {
-    rendering = false;
-    if (createPreview) {
-      capturePreview(backgroundColour);
-    }
-  }, RENDER_TIME_MILLIS);
-};
-
 const capturePreview = (backgroundColour) => {
   window.$artifact = {
     preview: renderSvg(backgroundColour) //toPng();
@@ -582,7 +579,7 @@ const capturePreview = (backgroundColour) => {
 };
 
 const renderPreview = (backgroundColour) => {
-  for (let i = 0; i < 60 * RENDER_TIME_SECONDS; i++) {
+  for (let i = 0; i < NUM_TICKS; i++) {
     Engine.update(engine, 16);
   }
   capturePreview(backgroundColour);
@@ -596,6 +593,7 @@ const renderPreview = (backgroundColour) => {
 // Our main entry point.
 
 const main = async () => {
+  ticks = 0;
   await fetchFonts();
   processParameters();
   await createPrng();
@@ -609,7 +607,8 @@ const main = async () => {
     for (const k of ks) {
       createOffscreenK(k);
     }
-    renderLoop(backgroundColour);
+    rendering = true;
+    window.requestAnimationFrame(renderCanvasLoop);
   } else {
     renderPreview(backgroundColour);
   }
