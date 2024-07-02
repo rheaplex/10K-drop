@@ -1,4 +1,4 @@
-/* global decomp FONTS genStyles Matter opentype Random svgcanvas TextEncoder
+/* global decomp FONTS genStyles Matter opentype Random Snap TextEncoder
    URLSearchParams XMLSerializer */
 
 ////////////////////////////////////////////////////////////////////////
@@ -176,128 +176,6 @@ const createBody = (glyph, x, y, scale, look) => {
 
 
 ////////////////////////////////////////////////////////////////////////
-// Fills.
-////////////////////////////////////////////////////////////////////////
-
-const createPattern = (ctx, kind, fg, bg, width, size) => {
-  let canvas;
-  let cctx;
-  if (! ctx.__root) {
-    canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = width;
-    cctx = canvas.getContext('2d');
-  } else {
-    cctx = new svgcanvas.Context({ width: width, height: width });
-  }
-  cctx.fillStyle = bg;
-  cctx.beginPath();
-  cctx.fillRect(0, 0, width, width);
-  cctx.fillStyle = fg;
-  cctx.beginPath();
-  switch(kind) {
-  case "spot":
-    cctx.arc(width / 2, width / 2, size / 2, 0, 2 * Math.PI);
-    cctx.fill();
-    break;
-  case "box":
-    cctx.fillRect(0, 0, width / 2, width / 2);
-    break;
-  case "check":
-    cctx.fillRect(0, 0, width / 2, width / 2);
-    cctx.fillRect(width / 2, width / 2, width / 2, width / 2);
-    break;
-  case "stripe":
-    cctx.fillRect(0, 0, width, width / 2);
-    break;
-  };
-  if (canvas) {
-    return ctx.createPattern(canvas, "repeat");
-  } else {
-    return ctx.createPattern(cctx, "repeat");
-  }
-};
-
-const gradientCoordsForDirection = (width, height, direction) => {
-  switch (direction) {
-  case "n":
-    return { x1: 0, y1: 0, x2: 0, y2: height};
-    break;
-  case "ne":
-    return{ x1: 0, y1: 0, x2: width, y2: height};
-    break;
-  case "e":
-    return{ x1: 0, y1: 0, x2: width, y2: 0};
-    break;
-  case "se":
-    return{ x1: 0, y1: height, x2: width, y2: 0};
-    break;
-  case "s":
-    return{ x1: 0, y1: height, x2: 0, y2: 0};
-    break;
-  case "sw":
-    return{ x1: width, y1: height, x2: 0, y2: 0};
-    break;
-  case "w":
-    return{ x1: width, y1: 0, x2: 0, y2: 0};
-    break;
-  case "nw":
-  default:
-    return{ x1: width, y1: height, x2: 0, y2: height};
-    break;
-  }
-};
-
-const createFill = (ctx, width, height, style) => {
-  let fill;
-  switch (style.paint) {
-  case "two stripes":
-    const coords1 = gradientCoordsForDirection(width, height, style.direction);
-    const gradient1 = ctx.createLinearGradient(
-      coords1.x1,
-      coords1.y1,
-      coords1.x2,
-      coords1.y2
-    );
-    gradient1.addColorStop(0, style.with[0]);
-    gradient1.addColorStop(0.5, style.with[0]);
-    gradient1.addColorStop(0.5000001, style.with[1]);
-    gradient1.addColorStop(1, style.with[1]);
-    fill = gradient1;
-    break;
-  case "gradient":
-    const coords2 = gradientCoordsForDirection(width, height, style.direction);
-    const gradient2 = ctx.createLinearGradient(
-      coords2.x1,
-      coords2.y1,
-      coords2.x2,
-      coords2.y2
-    );
-    gradient2.addColorStop(0, style.with[0]);
-    gradient2.addColorStop(1, style.with[1]);
-    fill = gradient2;
-    break;
-  case "pattern":
-    //const coords3 = gradientCoordsForDirection(width, height, style.direction);
-    fill = createPattern(
-      ctx,
-      style.kind,
-      style.with[0],
-      style.with[1],
-      width / 20,
-      width / 30
-    );
-    break;
-  case "flat":
-  default:
-    fill = style.with[0];
-    break;
-  }
-  return fill;
-};
-
-
-////////////////////////////////////////////////////////////////////////
 // Ks.
 ////////////////////////////////////////////////////////////////////////
 
@@ -352,67 +230,136 @@ const createKs = (styles) => {
 
 
 ////////////////////////////////////////////////////////////////////////
-// Render to SVG.
+// Shared rendering code.
 ////////////////////////////////////////////////////////////////////////
 
-// Transform the k gradients so they match the transformed paths,
-// matching the canvas gradient appearance in svg.
-// This function uses internal knowledge of svgcanvas.
-const transformDefs = (ctx) => {
-  const defs = ctx.__defs;
-  // If we have k gradients, rather than no gradients or
-  // just the bacground gradient.
-  if (defs.children.length > 1) {
-    for (const def of defs.children) {
-      // Don't assume order, and avoid the background.
-      const k = ks.find(b => b.options.fill.__root.id == def.id);
-      if (k) {
-        const kind = def.nodeName == "pattern" ? "pattern": "gradient";
-        const body = k.body;
-        const x = body.position.x;
-        const y = body.position.y;
-        const angle = body.angle * RAD2DEG;
-        def.setAttribute(
-          `${kind}Transform`,
-          `translate(${x}, ${y}) rotate(${angle}) translate(${k.leftOffset}, 0)`);
-        }
-    }
+const gradientCoordsForDirection = (width, height, direction) => {
+  switch (direction) {
+  case "n":
+    return { x1: 0, y1: 0, x2: 0, y2: height};
+    break;
+  case "ne":
+    return{ x1: 0, y1: 0, x2: width, y2: height};
+    break;
+  case "e":
+    return{ x1: 0, y1: 0, x2: width, y2: 0};
+    break;
+  case "se":
+    return{ x1: 0, y1: height, x2: width, y2: 0};
+    break;
+  case "s":
+    return{ x1: 0, y1: height, x2: 0, y2: 0};
+    break;
+  case "sw":
+    return{ x1: width, y1: height, x2: 0, y2: 0};
+    break;
+  case "w":
+    return{ x1: width, y1: 0, x2: 0, y2: 0};
+    break;
+  case "nw":
+  default:
+    return{ x1: width, y1: height, x2: 0, y2: height};
+    break;
   }
 };
 
-const renderSvg = (backgroundColour) => {
-  const ctx = new svgcanvas.Context({ width: WIDTH, height: HEIGHT });
-  ctx.fillStyle = createFill(ctx, WIDTH, HEIGHT, backgroundColour);
-  ctx.beginPath();
-  ctx.fillRect(0, 0, WIDTH, HEIGHT);
-  for (const k of ks) {
-    ctx.save();
-    const bounds = k.glyph.getBoundingBox();
-    k.options  = {
-      fill: createFill(
-        ctx,
-        FONT_SIZE_BASE,
-        FONT_SIZE_BASE,
-        k.style.fill
-      )
-    };
-    ctx.translate(
-      k.body.position.x,
-      k.body.position.y
-    );
-    ctx.rotate(k.body.angle);
-    k.glyph.draw(
+
+////////////////////////////////////////////////////////////////////////
+// Render to SVG.
+////////////////////////////////////////////////////////////////////////
+
+const createSVGPattern = (ctx, kind, fg, bg, width, size) => {
+  const group = ctx.g(ctx.rect(0, 0, width, width).attr({
+    fill: bg
+  }));
+  switch(kind) {
+  case "spot":
+    group.add(ctx.circle(width / 2, width / 2, size / 2).attr({
+      fill: fg
+    }));
+    break;
+  case "box":
+    group.add(ctx.rect(0, 0, width / 2, width / 2).attr({
+      fill: fg
+    }));
+    break;
+  case "check":
+    group.add(ctx.rect(0, 0, width / 2, width / 2).attr({
+      fill: fg
+    }));
+    group.add(ctx.rect(width / 2, width / 2, width / 2, width / 2).attr({
+      fill: fg
+    }));
+    break;
+  case "stripe":
+    group.add(ctx.rect(0, 0, width, width / 2).attr({
+      fill: fg
+    }));
+    break;
+  };
+  return group.pattern(0, 0, width, width);
+};
+
+const createSVGFill = (ctx, width, height, style) => {
+  let fill;
+  switch (style.paint) {
+  case "two stripes":
+    const coords1 = gradientCoordsForDirection(width, height, style.direction);
+      fill = ctx.gradient(
+        `l(${coords1.x1}, ${coords1.y1}, ${coords1.x2}, ${coords1.y2})${style.with[0]}-${style.with[0]}:50-${style.with[1]}:50.001-${style.with[1]}`
+      ).attr({ gradientUnits: "userSpaceOnUse" });;
+    break;
+  case "gradient":
+    const coords2 = gradientCoordsForDirection(width, height, style.direction);
+    fill = ctx.gradient(
+      // ${coords2.x1}, ${coords2.y1}, ${coords2.x2}, ${coords2.y2}
+      `l(0, 0, 0, 1)${style.with[0]}-${style.with[1]}`
+      ).attr({ gradientUnits: "userSpaceOnUse" });
+    break;
+  case "pattern":
+    fill = createSVGPattern(
       ctx,
+      style.kind,
+      style.with[0],
+      style.with[1],
+      width / 20,
+      width / 30
+    );
+    break;
+  case "flat":
+  default:
+    fill = style.with[0];
+    break;
+  }
+  return fill;
+};
+
+const renderSvg = (backgroundColour) => {
+  const paper = Snap( WIDTH, HEIGHT );
+  const bg = createSVGFill(paper, WIDTH, HEIGHT, backgroundColour);
+  paper.rect(0, 0, WIDTH, HEIGHT).attr({ fill: bg });
+  for (const k of ks) {
+    const fg = createSVGFill(
+      paper,
+      FONT_SIZE_BASE,
+      FONT_SIZE_BASE,
+      k.style.fill
+    );
+    const path = k.glyph.getPath(
       k.offset.x,
       k.offset.y,
       k.size,
-      k.options,
+      {},
       k.font
-    );
-    ctx.restore();
+    ).toPathData({ flipY: false });
+    const character = paper.path(path).attr({
+      fill: fg
+    });
+    const group = paper.group(character).attr({
+      transform: `translate(${k.body.position.x} ${k.body.position.y})) rotate(${k.body.angle * RAD2DEG})`
+    });
   }
-  transformDefs(ctx);
-  const svg = encodeURIComponent(ctx.getSerializedSvg());
+  const svg = paper.toDataURL();
   return `data:image/svg+xml;charset=utf-8,${svg}`;
 };
 
@@ -422,12 +369,88 @@ const renderSvg = (backgroundColour) => {
 // Render to offsceen canvas images for speed of painting them later.
 ////////////////////////////////////////////////////////////////////////
 
+const createCanvasPattern = (ctx, kind, fg, bg, width, size) => {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = width;
+  const cctx = canvas.getContext('2d');
+  cctx.fillStyle = bg;
+  cctx.beginPath();
+  cctx.fillRect(0, 0, width, width);
+  cctx.fillStyle = fg;
+  cctx.beginPath();
+  switch(kind) {
+  case "spot":
+    cctx.arc(width / 2, width / 2, size / 2, 0, 2 * Math.PI);
+    cctx.fill();
+    break;
+  case "box":
+    cctx.fillRect(0, 0, width / 2, width / 2);
+    break;
+  case "check":
+    cctx.fillRect(0, 0, width / 2, width / 2);
+    cctx.fillRect(width / 2, width / 2, width / 2, width / 2);
+    break;
+  case "stripe":
+    cctx.fillRect(0, 0, width, width / 2);
+    break;
+  };
+  return ctx.createPattern(canvas, "repeat");
+};
+
+const createCanvasFill = (ctx, width, height, style) => {
+  let fill;
+  switch (style.paint) {
+  case "two stripes":
+    const coords1 = gradientCoordsForDirection(width, height, style.direction);
+    const gradient1 = ctx.createLinearGradient(
+      coords1.x1,
+      coords1.y1,
+      coords1.x2,
+      coords1.y2
+    );
+    gradient1.addColorStop(0, style.with[0]);
+    gradient1.addColorStop(0.5, style.with[0]);
+    gradient1.addColorStop(0.5000001, style.with[1]);
+    gradient1.addColorStop(1, style.with[1]);
+    fill = gradient1;
+    break;
+  case "gradient":
+    const coords2 = gradientCoordsForDirection(width, height, style.direction);
+    const gradient2 = ctx.createLinearGradient(
+      coords2.x1,
+      coords2.y1,
+      coords2.x2,
+      coords2.y2
+    );
+    gradient2.addColorStop(0, style.with[0]);
+    gradient2.addColorStop(1, style.with[1]);
+    fill = gradient2;
+    break;
+  case "pattern":
+    fill = createCanvasPattern(
+      ctx,
+      style.kind,
+      style.with[0],
+      style.with[1],
+      width / 20,
+      width / 30
+    );
+    break;
+  case "flat":
+  default:
+    fill = style.with[0];
+    break;
+  }
+  return fill;
+};
+
 const createOffscreenBackground = (backgroundColour) => {
   const canvas = document.createElement('canvas');
   canvas.width = WIDTH;
   canvas.height = HEIGHT;
   const ctx = canvas.getContext('2d');
-  const fill = createFill(ctx, WIDTH, HEIGHT, backgroundColour);
+  const fill = createCanvasFill(ctx, WIDTH, HEIGHT, backgroundColour);
   ctx.fillStyle = fill;
   ctx.beginPath();
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
@@ -449,7 +472,7 @@ const createOffscreenK = (k) => {
   canvas.height = (bounds.y2 - bounds.y1) * k.glyphUnitScale;
   const ctx = canvas.getContext('2d');
   const options = {
-    fill: createFill(
+    fill: createCanvasFill(
       ctx,
       FONT_SIZE_BASE,
       FONT_SIZE_BASE,
@@ -459,10 +482,13 @@ const createOffscreenK = (k) => {
   /*if (style.strokeColour) {
     options.stroke = style.strokeColour;
     options.strokeWidth = style.strokeWidth;
-  }*/
+    }*/
+  // Line up the fill and the K to the left edge of the canvas.
+  // This is so we fit the canvas properly and match the SVG fill position.
+  ctx.translate(- k.leftOffset, 0);
   k.glyph.draw(
     ctx,
-    - k.leftOffset,
+    0,
     canvas.height + bounds.y1,
     k.size,
     options,
@@ -583,11 +609,11 @@ const renderPreview = (backgroundColour) => {
     Engine.update(engine, 16);
   }
   capturePreview(backgroundColour);
-  const img = document.createElement("img");
+  /*const img = document.createElement("img");
   img.setAttribute("width", "100%");
   img.setAttribute("height", "auto");
   img.src = window.$artifact.preview;
-  document.body.appendChild(img);
+  document.body.appendChild(img);*/
 };
 
 // Our main entry point.

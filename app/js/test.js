@@ -1,7 +1,7 @@
 /* global createBounds createEngine createKs createPrng
    ctx engine fetchFonts genStyles id ks random renderPreview
    HEIGHT NUM_KS WIDTH
-   Composite svgcanvas URLSearchParams */
+   Composite URLSearchParams */
 
 const DISPLAY_FOR = 2 * 1000;
 const EDITION_SIZE = 1000;
@@ -15,8 +15,7 @@ const showPreview = async () => {
   document.getElementById("currentEdition").value = id;
   await createPrng();
   const [ backgroundColour, styles ] = genStyles(random, NUM_KS);
-  ctx = new svgcanvas.Context({ width: WIDTH, height: HEIGHT });
-  createEngine();
+    createEngine();
   createKs(styles);
   Composite.add(engine.world, createBounds());
   renderPreview(backgroundColour);
