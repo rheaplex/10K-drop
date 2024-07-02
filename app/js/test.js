@@ -1,5 +1,5 @@
 /* global createBounds createEngine createKs createPrng
-   ctx engine fetchFonts genStyles id ks random renderPreview
+   ctx engine fetchFonts genStyles id init ks random renderPreview ticks
    HEIGHT NUM_KS WIDTH
    Composite URLSearchParams */
 
@@ -8,16 +8,11 @@ const EDITION_SIZE = 1000;
 let auto = false;
 
 const showPreview = async () => {
-  ks.length = 0;
-  if (document.images[0]) {
-    document.images[0].parentNode.removeChild(document.images[0]);
+  for(const e of document.getElementsByTagName('svg')) {
+    e.parentNode.removeChild(e);
   }
   document.getElementById("currentEdition").value = id;
-  await createPrng();
-  const [ backgroundColour, styles ] = genStyles(random, NUM_KS);
-    createEngine();
-  createKs(styles);
-  Composite.add(engine.world, createBounds());
+  const backgroundColour = await init();
   renderPreview(backgroundColour);
 };
 

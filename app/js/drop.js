@@ -66,7 +66,8 @@ let engine;
 const fonts = {};
 // The Ks to drop. Includes styling, physics simulation, and
 // other useful information.
-const ks = [];
+// This is a let as we replace it in test.js.
+let ks;
 
 // How many frames we've rendered.
 let ticks;
@@ -180,6 +181,7 @@ const createBody = (glyph, x, y, scale, look) => {
 ////////////////////////////////////////////////////////////////////////
 
 const createKs = (styles) => {
+  const createdKs = [];
   // Decide how far the Ks should vary from the horizontal centre.
   let xVariance = VARIANCE_MIN + (random.random_dec() * VARIANCE);
   let xVarianceOrigin = (WIDTH / 2) - (xVariance / 2);
@@ -224,8 +226,9 @@ const createKs = (styles) => {
       // See the comments in this function and in createBody(), above.
       offset: { x: - (offset.x + leftOffset), y: offset.y }
     };
-    ks.push(k);
+    createdKs.push(k);
   }
+  return createdKs;
 };
 
 
@@ -268,7 +271,7 @@ const gradientCoordsForDirection = (width, height, direction) => {
 // Render to SVG.
 ////////////////////////////////////////////////////////////////////////
 
-const createSVGPattern = (ctx, kind, fg, bg, width, size) => {
+const createSVGPattern = (ctx, kind, fg, bg, x, y, width, size) => {
   const group = ctx.g(ctx.rect(0, 0, width, width).attr({
     fill: bg
   }));
@@ -297,24 +300,32 @@ const createSVGPattern = (ctx, kind, fg, bg, width, size) => {
     }));
     break;
   };
-  return group.pattern(0, 0, width, width);
+  return group.pattern(0, 0, width, width).attr({
+    patterUnits: "userSpaceOnUse",
+    patternTransform: `translate(${x}, ${y})`
+  });
 };
 
-const createSVGFill = (ctx, width, height, style) => {
+const createSVGFill = (ctx, x, y, width, height, style) => {
   let fill;
   switch (style.paint) {
   case "two stripes":
     const coords1 = gradientCoordsForDirection(width, height, style.direction);
       fill = ctx.gradient(
         `l(${coords1.x1}, ${coords1.y1}, ${coords1.x2}, ${coords1.y2})${style.with[0]}-${style.with[0]}:50-${style.with[1]}:50.001-${style.with[1]}`
-      ).attr({ gradientUnits: "userSpaceOnUse" });;
+      ).attr({
+        gradientUnits: "userSpaceOnUse",
+        gradientTransform: `translate(${x}, ${y})`
+      });
     break;
   case "gradient":
     const coords2 = gradientCoordsForDirection(width, height, style.direction);
     fill = ctx.gradient(
-      // ${coords2.x1}, ${coords2.y1}, ${coords2.x2}, ${coords2.y2}
-      `l(0, 0, 0, 1)${style.with[0]}-${style.with[1]}`
-      ).attr({ gradientUnits: "userSpaceOnUse" });
+      `l(${coords2.x1}, ${coords2.y1}, ${coords2.x2}, ${coords2.y2})${style.with[0]}-${style.with[1]}`
+    ).attr({
+      gradientUnits: "userSpaceOnUse",
+      gradientTransform: `translate(${x}, ${y})`
+    });
     break;
   case "pattern":
     fill = createSVGPattern(
@@ -322,6 +333,8 @@ const createSVGFill = (ctx, width, height, style) => {
       style.kind,
       style.with[0],
       style.with[1],
+      x,
+      y,
       width / 20,
       width / 30
     );
@@ -336,11 +349,13 @@ const createSVGFill = (ctx, width, height, style) => {
 
 const renderSvg = (backgroundColour) => {
   const paper = Snap( WIDTH, HEIGHT );
-  const bg = createSVGFill(paper, WIDTH, HEIGHT, backgroundColour);
+  const bg = createSVGFill(paper, 0, 0, WIDTH, HEIGHT, backgroundColour);
   paper.rect(0, 0, WIDTH, HEIGHT).attr({ fill: bg });
   for (const k of ks) {
     const fg = createSVGFill(
       paper,
+      k.offset.x,
+      -k.offset.y,
       FONT_SIZE_BASE,
       FONT_SIZE_BASE,
       k.style.fill
@@ -353,8 +368,14 @@ const renderSvg = (backgroundColour) => {
       k.font
     ).toPathData({ flipY: false });
     const character = paper.path(path).attr({
-      fill: fg
-    });
+      fill: fg,
+      //stroke: 'green',
+      //strokeWidth: 3,
+      });
+/*    const fill = paper.rect(k.offset.x, -k.offset.y, FONT_SIZE_BASE, FONT_SIZE_BASE).attr({
+      fill: fg,
+      });
+    const group = paper.group(fill, character).attr({*/
     const group = paper.group(character).attr({
       transform: `translate(${k.body.position.x} ${k.body.position.y})) rotate(${k.body.angle * RAD2DEG})`
     });
@@ -477,12 +498,13 @@ const createOffscreenK = (k) => {
       FONT_SIZE_BASE,
       FONT_SIZE_BASE,
       k.style.fill
-    )
+    ),
+    /*stroke: "#0f0",
+    strokeWidth: "15"*/
   };
-  /*if (style.strokeColour) {
-    options.stroke = style.strokeColour;
-    options.strokeWidth = style.strokeWidth;
-    }*/
+  /*ctx.beginPath();
+  ctx.fillStyle = options.fill;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);*/
   // Line up the fill and the K to the left edge of the canvas.
   // This is so we fit the canvas properly and match the SVG fill position.
   ctx.translate(- k.leftOffset, 0);
@@ -493,8 +515,8 @@ const createOffscreenK = (k) => {
     k.size,
     options,
     k.font
-  );
-/*  ctx.beginPath();
+    );
+  /*ctx.beginPath();
   ctx.fill = 'none';
   ctx.strokeStyle = 'red';
   ctx.lineWidth = 10;
@@ -558,6 +580,11 @@ const renderCanvas = () => {
 };
 
 const renderCanvasLoop = () => {
+  for (let i = 0; i < NUM_TICKS; i++) {
+    Engine.update(engine, 16);
+  }
+  renderCanvas();
+  return;
   if (rendering) {
     Engine.update(engine, 16);
     renderCanvas();
@@ -605,9 +632,11 @@ const capturePreview = (backgroundColour) => {
 };
 
 const renderPreview = (backgroundColour) => {
+  console.log(random.random_dec());
   for (let i = 0; i < NUM_TICKS; i++) {
     Engine.update(engine, 16);
   }
+  console.log(random.random_dec());
   capturePreview(backgroundColour);
   /*const img = document.createElement("img");
   img.setAttribute("width", "100%");
@@ -616,17 +645,22 @@ const renderPreview = (backgroundColour) => {
   document.body.appendChild(img);*/
 };
 
-// Our main entry point.
-
-const main = async () => {
+const init = async () => {
   ticks = 0;
-  await fetchFonts();
-  processParameters();
   await createPrng();
   const [ backgroundColour, styles ] = genStyles(random, NUM_KS);
   createEngine();
   Composite.add(engine.world, createBounds());
-  createKs(styles);
+  ks = createKs(styles);
+  return backgroundColour;
+};
+
+// Our main entry point.
+
+const main = async () => {
+  await fetchFonts();
+  processParameters();
+  const backgroundColour = await init();
   if (! createPreview) {
     createCanvas(backgroundColour);
     createOffscreenBackground(backgroundColour);
