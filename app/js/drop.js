@@ -40,10 +40,10 @@ const VARIANCE     = VARIANCE_MAX - VARIANCE_MIN;
 // The maximum size for the Ks.
 // This can't be too big as we want to make sure that they
 // all fall into the visible area and don't stack offscreen.
-const FONT_SIZE_BASE      = HEIGHT / 3;
-// How long to run the physics before stopping and saving.
+const FONT_SIZE_BASE      = HEIGHT / 2;
+// How long to run the physics before stopping and/or saving.
 const RENDER_TIME_SECONDS = 45;
-const NUM_TICKS  = RENDER_TIME_SECONDS * 50;
+const NUM_TICKS           = RENDER_TIME_SECONDS * 50;
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -489,8 +489,9 @@ const createCanvas = () => {
 const createOffscreenK = (k) => {
   const canvas = document.createElement('canvas');
   const bounds = k.glyph.getBoundingBox();
-  canvas.width = (bounds.x2 - bounds.x1) * k.glyphUnitScale;
-  canvas.height = (bounds.y2 - bounds.y1) * k.glyphUnitScale;
+  canvas.width = FONT_SIZE_BASE; //(bounds.x2 - bounds.x1) * k.glyphUnitScale;
+  // So every glyph is drawn with the same bottom co-ordinate.
+  canvas.height = FONT_SIZE_BASE; //(bounds.y2 - bounds.y1) * k.glyphUnitScale;
   const ctx = canvas.getContext('2d');
   const options = {
     fill: createCanvasFill(
@@ -498,24 +499,20 @@ const createOffscreenK = (k) => {
       FONT_SIZE_BASE,
       FONT_SIZE_BASE,
       k.style.fill
-    ),
-    /*stroke: "#0f0",
-    strokeWidth: "15"*/
+    )
   };
-  /*ctx.beginPath();
-  ctx.fillStyle = options.fill;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);*/
   // Line up the fill and the K to the left edge of the canvas.
   // This is so we fit the canvas properly and match the SVG fill position.
-  ctx.translate(- k.leftOffset, 0);
+  //ctx.translate(0, canvas.height);
   k.glyph.draw(
     ctx,
-    0,
-    canvas.height + bounds.y1,
+    // So every glyph is drawn with the same bottom left co-ordinate.
+    -k.leftOffset,
+    canvas.height,
     k.size,
     options,
     k.font
-    );
+  );
   /*ctx.beginPath();
   ctx.fill = 'none';
   ctx.strokeStyle = 'red';
@@ -531,24 +528,8 @@ const renderCanvas = () => {
     if (! k.body.render.visible) {
       continue;
     }
-    // Draw glyph for debugging
-    /*ctx.save();
-    ctx.translate(
-      k.body.position.x,
-      k.body.position.y
-    );
-    ctx.rotate(k.body.angle);
-    k.glyph.draw(
-      ctx,
-      k.offset.x,
-      k.offset.y,
-      k.size,
-      k.options,
-      k.font
-    );
-    ctx.restore();
     // Render the parts of the physics simulation body for debugging.
-    for (const part of k.body.parts.slice(1)) {
+    /*for (const part of k.body.parts.slice(1)) {
       if (!part.render.visible) {
         continue;
       }
@@ -572,10 +553,26 @@ const renderCanvas = () => {
     ctx.rotate(k.body.angle);
     ctx.drawImage(
       k.image,
-     k.offset.x  + k.leftOffset,
+      k.offset.x  + k.leftOffset,
       -(k.image.height - k.offset.y)
     );
     ctx.restore();
+    // Draw glyph for debugging
+    /*ctx.save();
+    ctx.translate(
+      k.body.position.x,
+      k.body.position.y
+    );
+    ctx.rotate(k.body.angle);
+    k.glyph.draw(
+      ctx,
+      k.offset.x,
+      k.offset.y,
+      k.size,
+      { fill: undefined, stroke: "orange", strokeWidth: 10 },
+      k.font
+    );
+    ctx.restore();*/
   }
 };
 

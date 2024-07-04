@@ -404,8 +404,9 @@ const STROKE_COLOUR_STRATEGIES = {
     .map(i => pickDifferent(random, HUE, [background, fills[i]]))*/
 };
 
-const SCALE_MIN = 1.1;
-const SCALE_MAX = 1.5;
+const SCALE_MIN = 0.5;
+// The canvas allocated for an offscreen K must be the same max size.
+const SCALE_MAX = 1.0;
 const SCALE_RANGE = SCALE_MAX - SCALE_MIN;
 
 const SCALE_STRATEGIES = {
