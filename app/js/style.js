@@ -505,7 +505,7 @@ const BACKGROUND_STRATEGIES = {
 const genBackground = (random) => {
   const backgroundStrategy = pick(random, Object.keys(BACKGROUND_STRATEGIES));
   const background = BACKGROUND_STRATEGIES[backgroundStrategy](random);
-  console.log([backgroundStrategy, background]);
+  //console.log([backgroundStrategy, background]);
   return background;
 };
 
@@ -535,7 +535,7 @@ const generateProperties = (random, backgroundColour, count) => {
   const fonts = FONT_STRATEGIES[fontStrategy](random, count);
   const caseStrategy = pick(random, Object.keys(CASE_STRATEGIES));
   const cases = CASE_STRATEGIES[caseStrategy](random, count);
-  console.log({
+  /*console.log({
     fill: fillColourStrategy,
     stroke: strokeColourStrategy,
     strokeWidth: strokeWidths[0],
@@ -543,7 +543,7 @@ const generateProperties = (random, backgroundColour, count) => {
     font: fontStrategy,
     case: caseStrategy
   });
-  console.log([fillColours, strokeColours, strokeWidths, scales, fonts, cases]);
+  console.log([fillColours, strokeColours, strokeWidths, scales, fonts, cases]);*/
   return [fillColours, strokeColours, strokeWidths, scales, fonts, cases];
 };
 

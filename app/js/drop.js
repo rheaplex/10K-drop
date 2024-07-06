@@ -1,5 +1,5 @@
-/* global decomp FONTS genStyles Matter opentype Random Snap TextEncoder
-   URLSearchParams XMLSerializer */
+/* global decomp DOMMatrix DOMPoint FONTS genStyles Matter opentype
+   Random Snap TextEncoder URLSearchParams XMLSerializer */
 
 ////////////////////////////////////////////////////////////////////////
 // Imports
@@ -180,6 +180,14 @@ const createBody = (glyph, x, y, scale, look) => {
 // Ks.
 ////////////////////////////////////////////////////////////////////////
 
+const kBounds = (k) => {
+  const bounds = k.glyph.getBoundingBox();
+  return [
+    (bounds.x2 - bounds.x1) * k.glyphUnitScale,
+    (bounds.y2 - bounds.y1) * k.glyphUnitScale
+  ];
+};
+
 const createKs = (styles) => {
   const createdKs = [];
   // Decide how far the Ks should vary from the horizontal centre.
@@ -236,77 +244,82 @@ const createKs = (styles) => {
 // Shared rendering code.
 ////////////////////////////////////////////////////////////////////////
 
-const gradientCoordsForDirection = (width, height, direction) => {
+
+
+const gradientCoordsForDirection = (x1, y1, x2, y2, direction) => {
   switch (direction) {
   case "n":
-    return { x1: 0, y1: 0, x2: 0, y2: height};
+    return { x1: x1, y1: y1, x2: x1, y2: y2 };
     break;
   case "ne":
-    return{ x1: 0, y1: 0, x2: width, y2: height};
+    return{ x1: x1, y1: y1, x2: x2, y2: y2 };
     break;
   case "e":
-    return{ x1: 0, y1: 0, x2: width, y2: 0};
+    return{ x1: x1, y1: y1, x2: x2, y2: y1 };
     break;
   case "se":
-    return{ x1: 0, y1: height, x2: width, y2: 0};
+    return{ x1: x1, y1: y2, x2: x2, y2: y1 };
     break;
   case "s":
-    return{ x1: 0, y1: height, x2: 0, y2: 0};
+    return{ x1: x1, y1: y2, x2: x1, y2: y1 };
     break;
   case "sw":
-    return{ x1: width, y1: height, x2: 0, y2: 0};
+    return{ x1: x2, y1: y2, x2: x1, y2: y1 };
     break;
   case "w":
-    return{ x1: width, y1: 0, x2: 0, y2: 0};
+    return{ x1: x2, y1: y1, x2: x1, y2: y1 };
     break;
   case "nw":
   default:
-    return{ x1: width, y1: height, x2: 0, y2: height};
+    return{ x1: x2, y1: y2, x2: x1, y2: y2 };
     break;
   }
 };
+
+const textureCellSize = (width) => width / 20;
+
+const textureElementSize = (width) => width / 30;
 
 
 ////////////////////////////////////////////////////////////////////////
 // Render to SVG.
 ////////////////////////////////////////////////////////////////////////
 
-const createSVGPattern = (ctx, kind, fg, bg, x, y, width, size) => {
+const createSVGPattern = (ctx, kind, fg, bg, width, size) => {
   const group = ctx.g(ctx.rect(0, 0, width, width).attr({
     fill: bg
   }));
   switch(kind) {
   case "spot":
-    group.add(ctx.circle(width / 2, width / 2, size / 2).attr({
+    group.add(ctx.circle(size / 2, (width - size / 2), size / 2).attr({
       fill: fg
     }));
     break;
   case "box":
-    group.add(ctx.rect(0, 0, width / 2, width / 2).attr({
+    group.add(ctx.rect(0, width / 2, width / 2, width / 2).attr({
       fill: fg
     }));
     break;
   case "check":
-    group.add(ctx.rect(0, 0, width / 2, width / 2).attr({
+    group.add(ctx.rect(0, width/2, width / 2, width / 2).attr({
       fill: fg
     }));
-    group.add(ctx.rect(width / 2, width / 2, width / 2, width / 2).attr({
+    group.add(ctx.rect(width / 2, 0, width / 2, width / 2).attr({
       fill: fg
     }));
     break;
   case "stripe":
-    group.add(ctx.rect(0, 0, width, width / 2).attr({
+    group.add(ctx.rect(0, width / 2, width, width / 2).attr({
       fill: fg
     }));
     break;
   };
   return group.pattern(0, 0, width, width).attr({
-    patterUnits: "userSpaceOnUse",
-    patternTransform: `translate(${x}, ${y})`
+    patterUnits: "userSpaceOnUse"
   });
 };
 
-const createSVGFill = (ctx, x, y, width, height, style) => {
+const createSVGFill = (ctx, width, height, style) => {
   let fill;
   switch (style.paint) {
   case "two stripes":
@@ -315,7 +328,6 @@ const createSVGFill = (ctx, x, y, width, height, style) => {
         `l(${coords1.x1}, ${coords1.y1}, ${coords1.x2}, ${coords1.y2})${style.with[0]}-${style.with[0]}:50-${style.with[1]}:50.001-${style.with[1]}`
       ).attr({
         gradientUnits: "userSpaceOnUse",
-        gradientTransform: `translate(${x}, ${y})`
       });
     break;
   case "gradient":
@@ -324,7 +336,6 @@ const createSVGFill = (ctx, x, y, width, height, style) => {
       `l(${coords2.x1}, ${coords2.y1}, ${coords2.x2}, ${coords2.y2})${style.with[0]}-${style.with[1]}`
     ).attr({
       gradientUnits: "userSpaceOnUse",
-      gradientTransform: `translate(${x}, ${y})`
     });
     break;
   case "pattern":
@@ -333,10 +344,8 @@ const createSVGFill = (ctx, x, y, width, height, style) => {
       style.kind,
       style.with[0],
       style.with[1],
-      x,
-      y,
-      width / 20,
-      width / 30
+      textureCellSize(width),
+      textureElementSize(width),
     );
     break;
   case "flat":
@@ -347,19 +356,32 @@ const createSVGFill = (ctx, x, y, width, height, style) => {
   return fill;
 };
 
-const renderSvg = (backgroundColour) => {
-  const paper = Snap( WIDTH, HEIGHT );
-  const bg = createSVGFill(paper, 0, 0, WIDTH, HEIGHT, backgroundColour);
-  paper.rect(0, 0, WIDTH, HEIGHT).attr({ fill: bg });
+const translateSvgKFill = (f, k) => {
+  const bounds = k.glyph.getBoundingBox();
+  const h = -k.offset.x; ////-k.body.position.x; //- k.offset.x;
+  const v = -k.offset.y; //FONT_SIZE_BASE / 2;//((bounds.y2 - bounds.y1) * k.glyphUnitScale) % textureCellSize(FONT_SIZE_BASE);
+  console.log(v);
+  f.attr({
+    gradientUnits: "userSpaceOnUse",
+    gradientTransform: `translate(${h}, ${v})`
+  });
+};
+
+const renderSvgBackground = (ctx, backgroundColour) => {
+  const bg = createSVGFill(ctx, WIDTH, HEIGHT, backgroundColour);
+  ctx.rect(0, 0, WIDTH, HEIGHT).attr({ fill: bg });
+};
+
+const renderSvgKs = (ctx) => {
+  let i = 0;
   for (const k of ks) {
     const fg = createSVGFill(
-      paper,
-      k.offset.x,
-      -k.offset.y,
+      ctx,
       FONT_SIZE_BASE,
       FONT_SIZE_BASE,
       k.style.fill
     );
+    translateSvgKFill(fg, k);
     const path = k.glyph.getPath(
       k.offset.x,
       k.offset.y,
@@ -367,20 +389,19 @@ const renderSvg = (backgroundColour) => {
       {},
       k.font
     ).toPathData({ flipY: false });
-    const character = paper.path(path).attr({
-      fill: fg,
-      //stroke: 'green',
-      //strokeWidth: 3,
-      });
-/*    const fill = paper.rect(k.offset.x, -k.offset.y, FONT_SIZE_BASE, FONT_SIZE_BASE).attr({
-      fill: fg,
-      });
-    const group = paper.group(fill, character).attr({*/
-    const group = paper.group(character).attr({
-      transform: `translate(${k.body.position.x} ${k.body.position.y})) rotate(${k.body.angle * RAD2DEG})`
-    });
+    const character = ctx.path(path)
+          .attr({
+            fill: fg,
+            transform: `translate(${k.body.position.x} ${k.body.position.y})) rotate(${k.body.angle * RAD2DEG})`
+          });
   }
-  const svg = paper.toDataURL();
+};
+
+const renderSvg = (backgroundColour) => {
+  const ctx = Snap(WIDTH, HEIGHT);
+  renderSvgBackground(ctx, backgroundColour);
+  renderSvgKs(ctx);
+  const svg = ctx.toDataURL();
   return `data:image/svg+xml;charset=utf-8,${svg}`;
 };
 
@@ -390,72 +411,94 @@ const renderSvg = (backgroundColour) => {
 // Render to offsceen canvas images for speed of painting them later.
 ////////////////////////////////////////////////////////////////////////
 
-const createCanvasPattern = (ctx, kind, fg, bg, width, size) => {
+const createCanvasPattern = (ctx, style, fitWithin) => {
+  const width = textureCellSize(fitWithin);
+  const size = textureElementSize(fitWithin);
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = width;
   const cctx = canvas.getContext('2d');
-  cctx.fillStyle = bg;
+  cctx.fillStyle = style.with[0];
   cctx.beginPath();
   cctx.fillRect(0, 0, width, width);
-  cctx.fillStyle = fg;
+  cctx.fillStyle = style.with[1];
   cctx.beginPath();
-  switch(kind) {
+  switch(style.kind) {
   case "spot":
-    cctx.arc(width / 2, width / 2, size / 2, 0, 2 * Math.PI);
+    cctx.arc(size / 2, (width - size / 2), size / 2, 0, 2 * Math.PI);
     cctx.fill();
     break;
   case "box":
-    cctx.fillRect(0, 0, width / 2, width / 2);
+    cctx.fillRect(0, width / 2, width / 2, width / 2);
     break;
   case "check":
-    cctx.fillRect(0, 0, width / 2, width / 2);
-    cctx.fillRect(width / 2, width / 2, width / 2, width / 2);
+    cctx.fillRect(0, width / 2, width / 2, width / 2);
+    cctx.beginPath();
+    cctx.fillRect(width / 2, 0, width / 2, width / 2);
     break;
   case "stripe":
-    cctx.fillRect(0, 0, width, width / 2);
+    cctx.fillRect(0, width / 2, width, width / 2);
     break;
   };
-  return ctx.createPattern(canvas, "repeat");
+  const fill =  ctx.createPattern(canvas, "repeat");
+  // Align the pattern, which starts at the top left,
+  // to the bottom left of the glyph by translating it down.
+  const matrix = new DOMMatrix()
+        .translate(
+          0,
+          (ctx.height % textureCellSize(FONT_SIZE_BASE))
+        );
+  fill.setTransform(matrix);
+  return fill;
 };
 
-const createCanvasFill = (ctx, width, height, style) => {
+const createCanvasGradient = (ctx, x, y, width, height, style) => {
+  console.log(x, y, width, height);
+  const c = gradientCoordsForDirection(
+    x,
+    y,
+    width + x,
+    height + y,
+    style.direction
+  );
+  console.log(c);
   let fill;
   switch (style.paint) {
   case "two stripes":
-    const coords1 = gradientCoordsForDirection(width, height, style.direction);
-    const gradient1 = ctx.createLinearGradient(
-      coords1.x1,
-      coords1.y1,
-      coords1.x2,
-      coords1.y2
-    );
-    gradient1.addColorStop(0, style.with[0]);
-    gradient1.addColorStop(0.5, style.with[0]);
-    gradient1.addColorStop(0.5000001, style.with[1]);
-    gradient1.addColorStop(1, style.with[1]);
-    fill = gradient1;
+    fill = ctx.createLinearGradient(c.x1, c.y1, c.x2, c.y2);
+    fill.addColorStop(0, style.with[0]);
+    fill.addColorStop(0.5, style.with[0]);
+    fill.addColorStop(0.5000001, style.with[1]);
+    fill.addColorStop(1, style.with[1]);
     break;
   case "gradient":
-    const coords2 = gradientCoordsForDirection(width, height, style.direction);
-    const gradient2 = ctx.createLinearGradient(
-      coords2.x1,
-      coords2.y1,
-      coords2.x2,
-      coords2.y2
+    fill = ctx.createLinearGradient(c.x1, c.y1, c.x2, c.y2);
+    fill.addColorStop(0.3, style.with[0]);
+    fill.addColorStop(0.7, style.with[1]);
+    break;
+  };
+  return fill;
+};
+
+const createCanvasFill = (ctx, x, y, width, height, style) => {
+  const c = gradientCoordsForDirection(
+    x,
+    y,
+    x + width,
+    y + height,
+    style.direction
     );
-    gradient2.addColorStop(0, style.with[0]);
-    gradient2.addColorStop(1, style.with[1]);
-    fill = gradient2;
+  let fill;
+  switch (style.paint) {
+  case "two stripes":
+  case "gradient":
+    fill = createCanvasGradient(ctx, x, y, width, height, style);
     break;
   case "pattern":
     fill = createCanvasPattern(
       ctx,
-      style.kind,
-      style.with[0],
-      style.with[1],
-      width / 20,
-      width / 30
+      style,
+      width
     );
     break;
   case "flat":
@@ -471,7 +514,14 @@ const createOffscreenBackground = (backgroundColour) => {
   canvas.width = WIDTH;
   canvas.height = HEIGHT;
   const ctx = canvas.getContext('2d');
-  const fill = createCanvasFill(ctx, WIDTH, HEIGHT, backgroundColour);
+  const fill = createCanvasFill(
+    ctx,
+    0,
+    0,
+    WIDTH,
+    HEIGHT,
+    backgroundColour
+  );
   ctx.fillStyle = fill;
   ctx.beginPath();
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
@@ -488,27 +538,28 @@ const createCanvas = () => {
 
 const createOffscreenK = (k) => {
   const canvas = document.createElement('canvas');
-  const bounds = k.glyph.getBoundingBox();
-  canvas.width = FONT_SIZE_BASE; //(bounds.x2 - bounds.x1) * k.glyphUnitScale;
-  // So every glyph is drawn with the same bottom co-ordinate.
-  canvas.height = FONT_SIZE_BASE; //(bounds.y2 - bounds.y1) * k.glyphUnitScale;
+  const [ w, h ] = kBounds(k);
+  canvas.width = w;
+  canvas.height = h;
+  // Line up the fill and the K to the left edge of the canvas.
+  // This is so we fit the canvas properly and match the SVG fill position.
+  const bOffset = canvas.height % textureCellSize(FONT_SIZE_BASE);
   const ctx = canvas.getContext('2d');
   const options = {
     fill: createCanvasFill(
       ctx,
+      - (FONT_SIZE_BASE - canvas.width) / 2 - k.leftOffset,
+      - (FONT_SIZE_BASE - canvas.height) / 2 - bOffset,
       FONT_SIZE_BASE,
       FONT_SIZE_BASE,
       k.style.fill
     )
   };
-  // Line up the fill and the K to the left edge of the canvas.
-  // This is so we fit the canvas properly and match the SVG fill position.
-  //ctx.translate(0, canvas.height);
+  ctx.translate(0, bOffset);
   k.glyph.draw(
     ctx,
-    // So every glyph is drawn with the same bottom left co-ordinate.
     -k.leftOffset,
-    canvas.height,
+    canvas.height - bOffset,
     k.size,
     options,
     k.font
@@ -517,7 +568,7 @@ const createOffscreenK = (k) => {
   ctx.fill = 'none';
   ctx.strokeStyle = 'red';
   ctx.lineWidth = 10;
-  ctx.strokeRect(0, 0, canvas.width, canvas.height);*/
+  ctx.strokeRect(0, bOffset, canvas.width, canvas.height);*/
   k.image = canvas;
 };
 
