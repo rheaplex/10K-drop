@@ -314,26 +314,29 @@ const createSVGPattern = (ctx, kind, fg, bg, width, size) => {
     }));
     break;
   };
-  return group.pattern(0, 0, width, width).attr({
-    patterUnits: "userSpaceOnUse"
-  });
+  return group.pattern(0, 0, width, width);
 };
 
-const createSVGFill = (ctx, width, height, style) => {
+const createSVGFill = (ctx, x, y, width, height, style) => {
+  const c = gradientCoordsForDirection(
+    x,
+    y,
+    x + width,
+    y + height,
+    style.direction
+    );
   let fill;
   switch (style.paint) {
   case "two stripes":
-    const coords1 = gradientCoordsForDirection(width, height, style.direction);
       fill = ctx.gradient(
-        `l(${coords1.x1}, ${coords1.y1}, ${coords1.x2}, ${coords1.y2})${style.with[0]}-${style.with[0]}:50-${style.with[1]}:50.001-${style.with[1]}`
+        `l(${c.x1}, ${c.y1}, ${c.x2}, ${c.y2})${style.with[0]}-${style.with[0]}:50-${style.with[1]}:50.001-${style.with[1]}`
       ).attr({
         gradientUnits: "userSpaceOnUse",
       });
     break;
   case "gradient":
-    const coords2 = gradientCoordsForDirection(width, height, style.direction);
     fill = ctx.gradient(
-      `l(${coords2.x1}, ${coords2.y1}, ${coords2.x2}, ${coords2.y2})${style.with[0]}-${style.with[1]}`
+      `l(${c.x1}, ${c.y1}, ${c.x2}, ${c.y2})${style.with[0]}:30%-${style.with[1]}:70%`
     ).attr({
       gradientUnits: "userSpaceOnUse",
     });
@@ -347,6 +350,10 @@ const createSVGFill = (ctx, width, height, style) => {
       textureCellSize(width),
       textureElementSize(width),
     );
+    fill.attr({
+      patternUnits: "userSpaceOnUse",
+      patternTransform: `translate(${x}, ${y})`
+    });
     break;
   case "flat":
   default:
@@ -356,44 +363,40 @@ const createSVGFill = (ctx, width, height, style) => {
   return fill;
 };
 
-const translateSvgKFill = (f, k) => {
-  const bounds = k.glyph.getBoundingBox();
-  const h = -k.offset.x; ////-k.body.position.x; //- k.offset.x;
-  const v = -k.offset.y; //FONT_SIZE_BASE / 2;//((bounds.y2 - bounds.y1) * k.glyphUnitScale) % textureCellSize(FONT_SIZE_BASE);
-  console.log(v);
-  f.attr({
-    gradientUnits: "userSpaceOnUse",
-    gradientTransform: `translate(${h}, ${v})`
-  });
-};
-
 const renderSvgBackground = (ctx, backgroundColour) => {
-  const bg = createSVGFill(ctx, WIDTH, HEIGHT, backgroundColour);
+  const bg = createSVGFill(ctx, 0, 0, WIDTH, HEIGHT, backgroundColour);
   ctx.rect(0, 0, WIDTH, HEIGHT).attr({ fill: bg });
 };
 
 const renderSvgKs = (ctx) => {
   let i = 0;
   for (const k of ks) {
+    const [ w, h ] = kBounds(k);
+    const bOffset = h % textureCellSize(FONT_SIZE_BASE);
     const fg = createSVGFill(
       ctx,
+      (- ((FONT_SIZE_BASE - w) / 2)) + k.offset.x,
+      - FONT_SIZE_BASE / 2,
       FONT_SIZE_BASE,
       FONT_SIZE_BASE,
       k.style.fill
     );
-    translateSvgKFill(fg, k);
+    // Centre on 0, 0
     const path = k.glyph.getPath(
-      k.offset.x,
-      k.offset.y,
+      - ((w / 2) + k.leftOffset),
+      h / 2,
       k.size,
       {},
       k.font
     ).toPathData({ flipY: false });
-    const character = ctx.path(path)
-          .attr({
-            fill: fg,
-            transform: `translate(${k.body.position.x} ${k.body.position.y})) rotate(${k.body.angle * RAD2DEG})`
-          });
+    const character = ctx.g(
+      ctx.line(0, - h, 0, h * 2).attr({stroke: "red", strokeWidth: 1}),
+      ctx.line(- w, 0, w * 2, 0).attr({stroke: "red", strokeWidth: 1}),
+      ctx.path(path).attr({ fill: fg, })
+    ).attr({
+      transform: `translate(${k.body.position.x} ${k.body.position.y}) ` //+
+      //`rotate(${k.body.angle * RAD2DEG})`
+    });
   }
 };
 
@@ -440,7 +443,7 @@ const createCanvasPattern = (ctx, style, fitWithin) => {
     cctx.fillRect(0, width / 2, width, width / 2);
     break;
   };
-  const fill =  ctx.createPattern(canvas, "repeat");
+  const fill = ctx.createPattern(canvas, "repeat");
   // Align the pattern, which starts at the top left,
   // to the bottom left of the glyph by translating it down.
   const matrix = new DOMMatrix()
@@ -453,7 +456,6 @@ const createCanvasPattern = (ctx, style, fitWithin) => {
 };
 
 const createCanvasGradient = (ctx, x, y, width, height, style) => {
-  console.log(x, y, width, height);
   const c = gradientCoordsForDirection(
     x,
     y,
@@ -461,7 +463,6 @@ const createCanvasGradient = (ctx, x, y, width, height, style) => {
     height + y,
     style.direction
   );
-  console.log(c);
   let fill;
   switch (style.paint) {
   case "two stripes":
@@ -543,6 +544,8 @@ const createOffscreenK = (k) => {
   canvas.height = h;
   // Line up the fill and the K to the left edge of the canvas.
   // This is so we fit the canvas properly and match the SVG fill position.
+  // Note that we only need the cell offset for the pattern,
+  // but we handle it (apply it to no effect) for the gradients as well.
   const bOffset = canvas.height % textureCellSize(FONT_SIZE_BASE);
   const ctx = canvas.getContext('2d');
   const options = {
@@ -555,6 +558,14 @@ const createOffscreenK = (k) => {
       k.style.fill
     )
   };
+  ctx.save();
+ // Show centre of canvas to check gradient alignment.
+  /*ctx.strokeStyle = "black";
+  ctx.strokeWidth = 1;
+  ctx.moveTo(0, h / 2);
+  ctx.lineTo(w, h / 2);
+  ctx.stroke();
+  ctx.restore();*/
   ctx.translate(0, bOffset);
   k.glyph.draw(
     ctx,
@@ -604,7 +615,7 @@ const renderCanvas = () => {
     ctx.rotate(k.body.angle);
     ctx.drawImage(
       k.image,
-      k.offset.x  + k.leftOffset,
+      k.offset.x + k.leftOffset,
       -(k.image.height - k.offset.y)
     );
     ctx.restore();
@@ -680,11 +691,9 @@ const capturePreview = (backgroundColour) => {
 };
 
 const renderPreview = (backgroundColour) => {
-  console.log(random.random_dec());
   for (let i = 0; i < NUM_TICKS; i++) {
     Engine.update(engine, 16);
   }
-  console.log(random.random_dec());
   capturePreview(backgroundColour);
   /*const img = document.createElement("img");
   img.setAttribute("width", "100%");
