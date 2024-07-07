@@ -365,7 +365,7 @@ const renderSvgBackground = (ctx, backgroundColour) => {
     // Align pattern to bottom left.
     bg.attr({
       patternUnits: "userSpaceOnUse",
-      patternTransform: `translate(${WIDTH}, ${HEIGHT})`
+      patternTransform: `translate(0, ${-HEIGHT})`
     });
   }
   ctx.rect(0, 0, WIDTH, HEIGHT).attr({ fill: bg });
@@ -400,10 +400,13 @@ const renderSvgKs = (ctx) => {
       k.font
     ).toPathData({ flipY: false });
     const m = new Snap.Matrix();
-    m.translate((w / 2), - h / 2);
-    m.translate(k.body.position.x, k.body.position.y);
-    m.rotate(k.body.angle * RAD2DEG);
-    m.translate(k.offset.x + k.leftOffset, k.offset.y);
+    //m.translate((w / 2), - h / 2);
+    m.translate(
+      (w / 2) + k.body.position.x + k.offset.x + k.leftOffset,
+      (- (h / 2)) + k.body.position.y + k.offset.y
+    );
+    //m.rotate(k.body.angle * RAD2DEG);
+    //m.translate(k.offset.x + k.leftOffset, k.offset.y);
     const character = ctx.path(path).attr({
       fill: fg,
       transform: m
@@ -538,9 +541,9 @@ const createOffscreenBackground = (backgroundColour) => {
   // Align patterns to bottom left.
   // We use width here as cell sizes are square for width.
   // This is applied for gradients as well but has no effect on them.
-  ctx.translate(0, -(HEIGHT % textureCellSize(WIDTH)));
+  ctx.translate(0, -HEIGHT);
   ctx.beginPath();
-  ctx.fillRect(0, (HEIGHT % textureCellSize(WIDTH)), WIDTH, HEIGHT);
+  ctx.fillRect(0, HEIGHT, WIDTH, HEIGHT);
   background = canvas;
 };
 
@@ -619,7 +622,7 @@ const renderCanvas = () => {
       k.body.position.x,
       k.body.position.y
     );
-    ctx.rotate(k.body.angle);
+    //ctx.rotate(k.body.angle);
     ctx.drawImage(
       k.image,
       k.offset.x + k.leftOffset,
