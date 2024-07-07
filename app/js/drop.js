@@ -365,7 +365,7 @@ const renderSvgBackground = (ctx, backgroundColour) => {
     // Align pattern to bottom left.
     bg.attr({
       patternUnits: "userSpaceOnUse",
-      patternTransform: `translate(0, ${-HEIGHT})`
+      patternTransform: `translate(0, ${HEIGHT})`
     });
   }
   ctx.rect(0, 0, WIDTH, HEIGHT).attr({ fill: bg });
@@ -378,7 +378,7 @@ const renderSvgKs = (ctx) => {
     const bOffset = h % textureCellSize(FONT_SIZE_BASE);
     const fg = createSVGFill(
       ctx,
-      (- ((FONT_SIZE_BASE - w) / 2)) + k.offset.x,
+      (- ((FONT_SIZE_BASE - w) / 2)),
       - FONT_SIZE_BASE / 2,
       FONT_SIZE_BASE,
       FONT_SIZE_BASE,
@@ -388,25 +388,27 @@ const renderSvgKs = (ctx) => {
     // Align pattern to bottom left.
       fg.attr({
         patternUnits: "userSpaceOnUse",
-        patternTransform: `translate(${- w / 2}, ${h / 2})`
+        patternTransform: `translate(${0}, ${h})`
       });
     }
-    // Centre on 0, 0
+    // Top left to 0, 0 to match canvas image drawing.
     const path = k.glyph.getPath(
-      - ((w / 2) + k.leftOffset),
-      h / 2,
+      - k.leftOffset,
+      h,
       k.size,
       {},
       k.font
     ).toPathData({ flipY: false });
     const m = new Snap.Matrix();
-    //m.translate((w / 2), - h / 2);
     m.translate(
-      (w / 2) + k.body.position.x + k.offset.x + k.leftOffset,
-      (- (h / 2)) + k.body.position.y + k.offset.y
+      k.body.position.x,
+      k.body.position.y
     );
-    //m.rotate(k.body.angle * RAD2DEG);
-    //m.translate(k.offset.x + k.leftOffset, k.offset.y);
+    m.rotate(k.body.angle * RAD2DEG, 0, 0);
+    m.translate(
+      k.offset.x + k.leftOffset,
+      -(h - k.offset.y)
+    );
     const character = ctx.path(path).attr({
       fill: fg,
       transform: m
@@ -535,15 +537,20 @@ const createOffscreenBackground = (backgroundColour) => {
     0,
     WIDTH,
     HEIGHT,
-    backgroundColour
+     backgroundColour
   );
   ctx.fillStyle = fill;
-  // Align patterns to bottom left.
-  // We use width here as cell sizes are square for width.
-  // This is applied for gradients as well but has no effect on them.
-  ctx.translate(0, -HEIGHT);
-  ctx.beginPath();
-  ctx.fillRect(0, HEIGHT, WIDTH, HEIGHT);
+  if (backgroundColour.paint == "pattern") {
+    // Align patterns to bottom left.
+    // We use width here as cell sizes are square for width.
+    // This is applied for gradients as well but has no effect on them.
+    ctx.translate(0, HEIGHT);
+    ctx.beginPath();
+    ctx.fillRect(0, -HEIGHT, WIDTH, HEIGHT);
+  } else {
+    ctx.beginPath();
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+  }
   background = canvas;
 };
 
@@ -585,6 +592,7 @@ const createOffscreenK = (k) => {
     options,
     k.font
   );
+  ctx.fillRect(w / 2 - 10, (h / 2 - 10) - bOffset, 20, 20);
   /*ctx.beginPath();
   ctx.fill = 'none';
   ctx.strokeStyle = 'red';
@@ -617,18 +625,6 @@ const renderCanvas = () => {
       ctx.lineWidth = 5;
       ctx.stroke();
     }*/
-    ctx.save();
-    ctx.translate(
-      k.body.position.x,
-      k.body.position.y
-    );
-    //ctx.rotate(k.body.angle);
-    ctx.drawImage(
-      k.image,
-      k.offset.x + k.leftOffset,
-      -(k.image.height - k.offset.y)
-    );
-    ctx.restore();
     // Draw glyph for debugging
     /*ctx.save();
     ctx.translate(
@@ -641,19 +637,26 @@ const renderCanvas = () => {
       k.offset.x,
       k.offset.y,
       k.size,
-      { fill: undefined, stroke: "orange", strokeWidth: 10 },
+      { fill: "orange", strokeWidth: 10 },
       k.font
     );
     ctx.restore();*/
+    ctx.save();
+    ctx.translate(
+      k.body.position.x,
+      k.body.position.y
+    );
+    ctx.rotate(k.body.angle, 0, 0);
+    ctx.drawImage(
+      k.image,
+      k.offset.x + k.leftOffset,
+      -(k.image.height - k.offset.y)
+    );
+    ctx.restore();
   }
 };
 
 const renderCanvasLoop = () => {
-  for (let i = 0; i < NUM_TICKS; i++) {
-    Engine.update(engine, 16);
-  }
-  renderCanvas();
-  return;
   if (rendering) {
     Engine.update(engine, 16);
     renderCanvas();
