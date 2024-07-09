@@ -55,3 +55,5 @@ class Random {
     return list[this.random_int(0, list.length - 1)];
   }
 }
+
+module.exports = Random;

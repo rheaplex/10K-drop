@@ -3,13 +3,6 @@ var opentype = (() => {
   var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
   var __getOwnPropNames = Object.getOwnPropertyNames;
   var __hasOwnProp = Object.prototype.hasOwnProperty;
-  var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
-    get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
-  }) : x)(function(x) {
-    if (typeof require !== "undefined")
-      return require.apply(this, arguments);
-    throw Error('Dynamic require of "' + x + '" is not supported');
-  });
   var __export = (target, all) => {
     for (var name in all)
       __defProp(target, name, { get: all[name], enumerable: true });
@@ -24,7 +17,7 @@ var opentype = (() => {
   };
   var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-  // src/opentype.js
+  // src/opentype.mjs
   var opentype_exports = {};
   __export(opentype_exports, {
     BoundingBox: () => bbox_default,
@@ -37,7 +30,7 @@ var opentype = (() => {
     parse: () => parseBuffer
   });
 
-  // src/tiny-inflate@1.0.3.esm.js
+  // src/tiny-inflate@1.0.3.esm.mjs
   var TINF_OK = 0;
   var TINF_DATA_ERROR = -3;
   function Tree() {
@@ -85,10 +78,8 @@ var opentype = (() => {
   var lengths = new Uint8Array(288 + 32);
   function tinf_build_bits_base(bits, base, delta, first) {
     var i, sum;
-    for (i = 0; i < delta; ++i)
-      bits[i] = 0;
-    for (i = 0; i < 30 - delta; ++i)
-      bits[i + delta] = i / delta | 0;
+    for (i = 0; i < delta; ++i) bits[i] = 0;
+    for (i = 0; i < 30 - delta; ++i) bits[i + delta] = i / delta | 0;
     for (sum = first, i = 0; i < 30; ++i) {
       base[i] = sum;
       sum += 1 << bits[i];
@@ -96,40 +87,30 @@ var opentype = (() => {
   }
   function tinf_build_fixed_trees(lt, dt) {
     var i;
-    for (i = 0; i < 7; ++i)
-      lt.table[i] = 0;
+    for (i = 0; i < 7; ++i) lt.table[i] = 0;
     lt.table[7] = 24;
     lt.table[8] = 152;
     lt.table[9] = 112;
-    for (i = 0; i < 24; ++i)
-      lt.trans[i] = 256 + i;
-    for (i = 0; i < 144; ++i)
-      lt.trans[24 + i] = i;
-    for (i = 0; i < 8; ++i)
-      lt.trans[24 + 144 + i] = 280 + i;
-    for (i = 0; i < 112; ++i)
-      lt.trans[24 + 144 + 8 + i] = 144 + i;
-    for (i = 0; i < 5; ++i)
-      dt.table[i] = 0;
+    for (i = 0; i < 24; ++i) lt.trans[i] = 256 + i;
+    for (i = 0; i < 144; ++i) lt.trans[24 + i] = i;
+    for (i = 0; i < 8; ++i) lt.trans[24 + 144 + i] = 280 + i;
+    for (i = 0; i < 112; ++i) lt.trans[24 + 144 + 8 + i] = 144 + i;
+    for (i = 0; i < 5; ++i) dt.table[i] = 0;
     dt.table[5] = 32;
-    for (i = 0; i < 32; ++i)
-      dt.trans[i] = i;
+    for (i = 0; i < 32; ++i) dt.trans[i] = i;
   }
   var offs = new Uint16Array(16);
   function tinf_build_tree(t, lengths2, off, num) {
     var i, sum;
-    for (i = 0; i < 16; ++i)
-      t.table[i] = 0;
-    for (i = 0; i < num; ++i)
-      t.table[lengths2[off + i]]++;
+    for (i = 0; i < 16; ++i) t.table[i] = 0;
+    for (i = 0; i < num; ++i) t.table[lengths2[off + i]]++;
     t.table[0] = 0;
     for (sum = 0, i = 0; i < 16; ++i) {
       offs[i] = sum;
       sum += t.table[i];
     }
     for (i = 0; i < num; ++i) {
-      if (lengths2[off + i])
-        t.trans[offs[lengths2[off + i]]++] = i;
+      if (lengths2[off + i]) t.trans[offs[lengths2[off + i]]++] = i;
     }
   }
   function tinf_getbit(d) {
@@ -177,8 +158,7 @@ var opentype = (() => {
     hlit = tinf_read_bits(d, 5, 257);
     hdist = tinf_read_bits(d, 5, 1);
     hclen = tinf_read_bits(d, 4, 4);
-    for (i = 0; i < 19; ++i)
-      lengths[i] = 0;
+    for (i = 0; i < 19; ++i) lengths[i] = 0;
     for (i = 0; i < hclen; ++i) {
       var clen = tinf_read_bits(d, 3, 0);
       lengths[clcidx[i]] = clen;
@@ -288,126 +268,7 @@ var opentype = (() => {
   length_bits[28] = 0;
   length_base[28] = 258;
 
-  // src/util.js
-  function isBrowser() {
-    return typeof window !== "undefined" || typeof WorkerGlobalScope !== "undefined";
-  }
-  function isNode() {
-    return typeof window === "undefined" && typeof global === "object" && typeof process === "object";
-  }
-  function checkArgument(expression, message) {
-    if (!expression) {
-      throw message;
-    }
-  }
-  function arraysEqual(ar1, ar2) {
-    const n = ar1.length;
-    if (n !== ar2.length) {
-      return false;
-    }
-    for (let i = 0; i < n; i++) {
-      if (ar1[i] !== ar2[i]) {
-        return false;
-      }
-    }
-    return true;
-  }
-  function binarySearch(array, key, value) {
-    let low = 0, high = array.length - 1;
-    let result = null;
-    while (low <= high) {
-      const mid = Math.floor((low + high) / 2);
-      const record = array[mid];
-      const recordValue = record[key];
-      if (recordValue < value) {
-        low = mid + 1;
-      } else if (recordValue > value) {
-        high = mid - 1;
-      } else {
-        result = record;
-        break;
-      }
-    }
-    return result;
-  }
-  function binarySearchIndex(array, key, value) {
-    let low = 0, high = array.length - 1;
-    while (low <= high) {
-      const mid = Math.floor((low + high) / 2);
-      const element = array[mid];
-      if (element[key] < value) {
-        low = mid + 1;
-      } else if (element[key] > value) {
-        high = mid - 1;
-      } else {
-        return mid;
-      }
-    }
-    return -1;
-  }
-  function binarySearchInsert(array, key, value) {
-    let low = 0, high = array.length;
-    const compare = (a, b) => a[key] - b[key];
-    while (low < high) {
-      const mid = low + high >>> 1;
-      if (compare(array[mid], value) < 0)
-        low = mid + 1;
-      else
-        high = mid;
-    }
-    array.splice(low, 0, value);
-    return low;
-  }
-  function isGzip(buf) {
-    return buf[0] === 31 && buf[1] === 139 && buf[2] === 8;
-  }
-  function unGzip(gzip) {
-    const data = new DataView(gzip.buffer, gzip.byteOffset, gzip.byteLength);
-    let start = 10;
-    const end = gzip.byteLength - 8;
-    const flg = data.getInt8(3);
-    if (flg & 4) {
-      start += 2 + data.getUint16(start, true);
-    }
-    if (flg & 8) {
-      while (start < end)
-        if (gzip[start++] === 0)
-          break;
-    }
-    if (flg & 16) {
-      while (start < end)
-        if (gzip[start++] === 0)
-          break;
-    }
-    if (flg & 2) {
-      start += 2;
-    }
-    if (start >= end)
-      throw new Error("Can't find compressed blocks");
-    const isize = data.getUint32(data.byteLength - 4, true);
-    return tinf_uncompress(gzip.subarray(start, end), new Uint8Array(isize));
-  }
-  function copyPoint(p) {
-    return {
-      x: p.x,
-      y: p.y,
-      onCurve: p.onCurve,
-      lastPointOfContour: p.lastPointOfContour
-    };
-  }
-  function copyComponent(c) {
-    return {
-      glyphIndex: c.glyphIndex,
-      xScale: c.xScale,
-      scale01: c.scale01,
-      scale10: c.scale10,
-      yScale: c.yScale,
-      dx: c.dx,
-      dy: c.dy
-    };
-  }
-
-  // src/bbox.js
+  // src/bbox.mjs
   function derive(v0, v1, v2, v3, t) {
     return Math.pow(1 - t, 3) * v0 + 3 * Math.pow(1 - t, 2) * t * v1 + 3 * (1 - t) * Math.pow(t, 2) * v2 + Math.pow(t, 3) * v3;
   }
@@ -464,33 +325,25 @@ var opentype = (() => {
       const a = -3 * p0[i] + 9 * p1[i] - 9 * p2[i] + 3 * p3[i];
       const c = 3 * p1[i] - 3 * p0[i];
       if (a === 0) {
-        if (b === 0)
-          continue;
+        if (b === 0) continue;
         const t = -c / b;
         if (0 < t && t < 1) {
-          if (i === 0)
-            this.addX(derive(p0[i], p1[i], p2[i], p3[i], t));
-          if (i === 1)
-            this.addY(derive(p0[i], p1[i], p2[i], p3[i], t));
+          if (i === 0) this.addX(derive(p0[i], p1[i], p2[i], p3[i], t));
+          if (i === 1) this.addY(derive(p0[i], p1[i], p2[i], p3[i], t));
         }
         continue;
       }
       const b2ac = Math.pow(b, 2) - 4 * c * a;
-      if (b2ac < 0)
-        continue;
+      if (b2ac < 0) continue;
       const t1 = (-b + Math.sqrt(b2ac)) / (2 * a);
       if (0 < t1 && t1 < 1) {
-        if (i === 0)
-          this.addX(derive(p0[i], p1[i], p2[i], p3[i], t1));
-        if (i === 1)
-          this.addY(derive(p0[i], p1[i], p2[i], p3[i], t1));
+        if (i === 0) this.addX(derive(p0[i], p1[i], p2[i], p3[i], t1));
+        if (i === 1) this.addY(derive(p0[i], p1[i], p2[i], p3[i], t1));
       }
       const t2 = (-b - Math.sqrt(b2ac)) / (2 * a);
       if (0 < t2 && t2 < 1) {
-        if (i === 0)
-          this.addX(derive(p0[i], p1[i], p2[i], p3[i], t2));
-        if (i === 1)
-          this.addY(derive(p0[i], p1[i], p2[i], p3[i], t2));
+        if (i === 0) this.addX(derive(p0[i], p1[i], p2[i], p3[i], t2));
+        if (i === 1) this.addY(derive(p0[i], p1[i], p2[i], p3[i], t2));
       }
     }
   };
@@ -503,7 +356,7 @@ var opentype = (() => {
   };
   var bbox_default = BoundingBox;
 
-  // src/path.js
+  // src/path.mjs
   function Path() {
     this.commands = [];
     this.fill = "black";
@@ -1004,7 +857,7 @@ var opentype = (() => {
   };
   var path_default = Path;
 
-  // src/check.js
+  // src/check.mjs
   function fail(message) {
     throw new Error(message);
   }
@@ -1015,7 +868,7 @@ var opentype = (() => {
   }
   var check_default = { fail, argument, assert: argument };
 
-  // src/types.js
+  // src/types.mjs
   var LIMIT16 = 32768;
   var LIMIT32 = 2147483648;
   var MIN_16_16 = -(1 << 15);
@@ -1592,7 +1445,7 @@ var opentype = (() => {
     return v.length;
   };
 
-  // src/table.js
+  // src/table.mjs
   function Table(tableName, fields, options) {
     if (fields && fields.length) {
       for (let i = 0; i < fields.length; i += 1) {
@@ -1774,7 +1627,7 @@ var opentype = (() => {
     recordList
   };
 
-  // src/parse.js
+  // src/parse.mjs
   function getByte(dataView, offset) {
     return dataView.getUint8(offset);
   }
@@ -1933,8 +1786,7 @@ var opentype = (() => {
     const major = getUShort(this.data, this.offset + this.relativeOffset);
     const minor = getUShort(this.data, this.offset + this.relativeOffset + 2);
     this.relativeOffset += 4;
-    if (minorBase === void 0)
-      minorBase = 4096;
+    if (minorBase === void 0) minorBase = 4096;
     return major + minor / minorBase / 10;
   };
   Parser.prototype.skip = function(type, amount) {
@@ -2371,11 +2223,10 @@ var opentype = (() => {
       default:
         console.error(`unsupported DeltaSetIndexMap format ${format}`);
     }
-    if (!mapCount)
-      return {
-        format,
-        entryFormat
-      };
+    if (!mapCount) return {
+      format,
+      entryFormat
+    };
     const bitCount = (entryFormat & masks.INNER_INDEX_BIT_COUNT_MASK) + 1;
     const entrySize = ((entryFormat & masks.MAP_ENTRY_SIZE_MASK) >> 4) + 1;
     for (let n = 0; n < mapCount; n++) {
@@ -2429,13 +2280,11 @@ var opentype = (() => {
     const parseOffset = (offsetSizeIs32Bit ? this.parseULong : this.parseUShort).bind(this);
     const glyphVariations = {};
     let currentOffset = parseOffset();
-    if (!offsetSizeIs32Bit)
-      currentOffset *= 2;
+    if (!offsetSizeIs32Bit) currentOffset *= 2;
     let nextOffset;
     for (let i = 0; i < glyphCount; i++) {
       nextOffset = parseOffset();
-      if (!offsetSizeIs32Bit)
-        nextOffset *= 2;
+      if (!offsetSizeIs32Bit) nextOffset *= 2;
       const length = nextOffset - currentOffset;
       glyphVariations[i] = length ? this.parseTupleVariationStore(
         glyphVariationDataArrayOffset + currentOffset,
@@ -2511,13 +2360,11 @@ var opentype = (() => {
         return {
           configurable: true,
           get: function() {
-            if (_deltas === void 0)
-              parseDeltas();
+            if (_deltas === void 0) parseDeltas();
             return propertyName === "deltasY" ? _deltasY : _deltas;
           },
           set: function(deltas) {
-            if (_deltas === void 0)
-              parseDeltas();
+            if (_deltas === void 0) parseDeltas();
             if (propertyName === "deltasY") {
               _deltasY = deltas;
             } else {
@@ -2627,7 +2474,7 @@ var opentype = (() => {
     Parser
   };
 
-  // src/tables/name.js
+  // src/tables/name.mjs
   var nameTableNames = [
     "copyright",
     // 0
@@ -3575,7 +3422,7 @@ var opentype = (() => {
   }
   var name_default = { parse: parseNameTable, make: makeNameTable, getNameByID };
 
-  // src/tables/cmap.js
+  // src/tables/cmap.mjs
   function parseCmapTableFormat0(cmap, p, platformID, encodingID) {
     cmap.length = p.parseUShort();
     cmap.language = p.parseUShort() - 1;
@@ -3701,8 +3548,7 @@ var opentype = (() => {
       platformId = parse_default.getUShort(data, start + 4 + i * 8);
       encodingId = parse_default.getUShort(data, start + 4 + i * 8 + 2);
       if (platformId === 3 && platform3Encodings.includes(encodingId) || platformId === 0 && platform0Encodings.includes(encodingId) || platformId === 1 && encodingId === 0) {
-        if (offset > 0)
-          continue;
+        if (offset > 0) continue;
         offset = parse_default.getULong(data, start + 4 + i * 8 + 4);
         if (format14Parser) {
           break;
@@ -3874,7 +3720,7 @@ var opentype = (() => {
   }
   var cmap_default = { parse: parseCmapTable, make: makeCmapTable };
 
-  // src/encoding.js
+  // src/encoding.mjs
   var cffStandardStrings = [
     ".notdef",
     "space",
@@ -5638,7 +5484,7 @@ var opentype = (() => {
     }
   }
 
-  // src/draw.js
+  // src/draw.mjs
   function line(ctx, x1, y1, x2, y2) {
     ctx.beginPath();
     ctx.moveTo(x1, y1);
@@ -5647,7 +5493,7 @@ var opentype = (() => {
   }
   var draw_default = { line };
 
-  // src/tables/cpal.js
+  // src/tables/cpal.mjs
   function parseCpalTable(data, start) {
     const p = new Parser(data, start);
     const version = p.parseShort();
@@ -5702,8 +5548,7 @@ var opentype = (() => {
       return "currentColor";
     }
     const cpalTable = font && font.tables && font.tables.cpal;
-    if (!cpalTable)
-      return "currentColor";
+    if (!cpalTable) return "currentColor";
     if (palette > cpalTable.colorRecordIndices.length - 1) {
       throw new Error(`Palette index out of range (colorRecordIndices.length: ${cpalTable.colorRecordIndices.length}, index: ${index})`);
     }
@@ -5849,7 +5694,7 @@ var opentype = (() => {
       if (targetFormat == "bgra") {
         return color;
       }
-    } else if (globalThis.window && globalThis.window.HTMLCanvasElement && /^[a-z]+$/i.test(color)) {
+    } else if (typeof document !== "undefined" && /^[a-z]+$/i.test(color)) {
       const ctx = document.createElement("canvas").getContext("2d");
       ctx.fillStyle = color;
       const detectedColor = formatColor(ctx.fillStyle, "hexa");
@@ -5890,8 +5735,7 @@ var opentype = (() => {
     return formatColor(color, targetFormat);
   }
   function formatColor(bgra, format = "hexa") {
-    if (bgra === "currentColor")
-      return bgra;
+    if (bgra === "currentColor") return bgra;
     if (Number.isInteger(bgra)) {
       if (format == "raw" || format == "cpal") {
         return bgra;
@@ -5929,7 +5773,7 @@ var opentype = (() => {
   }
   var cpal_default = { parse: parseCpalTable, make: makeCpalTable, getPaletteColor, parseColor, formatColor };
 
-  // src/glyph.js
+  // src/glyph.mjs
   function getPathDefinition(glyph, path) {
     let _path = path || new path_default();
     return {
@@ -6018,10 +5862,8 @@ var opentype = (() => {
       xScale = yScale = 1;
     } else {
       commands = useGlyph.path.commands;
-      if (xScale === void 0)
-        xScale = scale;
-      if (yScale === void 0)
-        yScale = scale;
+      if (xScale === void 0) xScale = scale;
+      if (yScale === void 0) yScale = scale;
     }
     const p = new path_default();
     if (options.drawSVG) {
@@ -6265,7 +6107,7 @@ var opentype = (() => {
   };
   var glyph_default = Glyph;
 
-  // src/glyphset.js
+  // src/glyphset.mjs
   function defineDependentProperty(glyph, externalName, internalName) {
     Object.defineProperty(glyph, externalName, {
       get: function() {
@@ -6345,6 +6187,7 @@ var opentype = (() => {
         path.unitsPerEm = font.unitsPerEm;
         return path;
       };
+      defineDependentProperty(glyph, "numberOfContours", "_numberOfContours");
       defineDependentProperty(glyph, "xMin", "_xMin");
       defineDependentProperty(glyph, "xMax", "_xMax");
       defineDependentProperty(glyph, "yMin", "_yMin");
@@ -6366,7 +6209,7 @@ var opentype = (() => {
   }
   var glyphset_default = { GlyphSet, glyphLoader, ttfGlyphLoader, cffGlyphLoader };
 
-  // src/tables/cff.js
+  // src/tables/cff.mjs
   function equals(a, b) {
     if (a === b) {
       return true;
@@ -7315,8 +7158,7 @@ var opentype = (() => {
         const keys = Object.keys(c);
         for (let i = 0; i < keys.length; i++) {
           const key = keys[i];
-          if (key === "type")
-            continue;
+          if (key === "type") continue;
           c[key] = Math.round(c[key]);
         }
         return c;
@@ -7720,7 +7562,7 @@ var opentype = (() => {
   }
   var cff_default = { parse: parseCFFTable, make: makeCFFTable };
 
-  // src/tables/head.js
+  // src/tables/head.mjs
   function parseHeadTable(data, start) {
     const head = {};
     const p = new parse_default.Parser(data, start);
@@ -7773,7 +7615,7 @@ var opentype = (() => {
   }
   var head_default = { parse: parseHeadTable, make: makeHeadTable };
 
-  // src/tables/hhea.js
+  // src/tables/hhea.mjs
   function parseHheaTable(data, start) {
     const hhea = {};
     const p = new parse_default.Parser(data, start);
@@ -7816,7 +7658,7 @@ var opentype = (() => {
   }
   var hhea_default = { parse: parseHheaTable, make: makeHheaTable };
 
-  // src/tables/hmtx.js
+  // src/tables/hmtx.mjs
   function parseHmtxTableAll(data, start, numMetrics, numGlyphs, glyphs) {
     let advanceWidth;
     let leftSideBearing;
@@ -7866,7 +7708,7 @@ var opentype = (() => {
   }
   var hmtx_default = { parse: parseHmtxTable, make: makeHmtxTable };
 
-  // src/tables/ltag.js
+  // src/tables/ltag.mjs
   function makeLtagTable(tags) {
     const result = new table_default.Table("ltag", [
       { name: "version", type: "ULONG", value: 1 },
@@ -7907,7 +7749,7 @@ var opentype = (() => {
   }
   var ltag_default = { make: makeLtagTable, parse: parseLtagTable };
 
-  // src/tables/maxp.js
+  // src/tables/maxp.mjs
   function parseMaxpTable(data, start) {
     const maxp = {};
     const p = new parse_default.Parser(data, start);
@@ -7938,7 +7780,7 @@ var opentype = (() => {
   }
   var maxp_default = { parse: parseMaxpTable, make: makeMaxpTable };
 
-  // src/tables/os2.js
+  // src/tables/os2.mjs
   var unicodeRanges = [
     { begin: 0, end: 127 },
     // Basic Latin
@@ -8297,7 +8139,7 @@ var opentype = (() => {
   }
   var os2_default = { parse: parseOS2Table, make: makeOS2Table, unicodeRanges, getUnicodeRange };
 
-  // src/tables/post.js
+  // src/tables/post.mjs
   function parsePostTable(data, start) {
     const post = {};
     const p = new parse_default.Parser(data, start);
@@ -8363,7 +8205,7 @@ var opentype = (() => {
   }
   var post_default = { parse: parsePostTable, make: makePostTable };
 
-  // src/tables/gsub.js
+  // src/tables/gsub.mjs
   var subtableParsers = new Array(9);
   subtableParsers[1] = function parseLookup1() {
     const start = this.offset + this.relativeOffset;
@@ -8708,7 +8550,7 @@ var opentype = (() => {
   }
   var gsub_default = { parse: parseGsubTable, make: makeGsubTable };
 
-  // src/tables/meta.js
+  // src/tables/meta.mjs
   function parseMetaTable(data, start) {
     const p = new parse_default.Parser(data, start);
     const tableVersion = p.parseULong();
@@ -8750,7 +8592,7 @@ var opentype = (() => {
   }
   var meta_default = { parse: parseMetaTable, make: makeMetaTable };
 
-  // src/tables/colr.js
+  // src/tables/colr.mjs
   function parseColrTable(data, start) {
     const p = new Parser(data, start);
     const version = p.parseUShort();
@@ -8801,7 +8643,7 @@ var opentype = (() => {
   }
   var colr_default = { parse: parseColrTable, make: makeColrTable };
 
-  // src/tables/fvar.js
+  // src/tables/fvar.mjs
   function makeFvarAxis(n, axis) {
     return [
       { name: "tag_" + n, type: "TAG", value: axis.tag },
@@ -8923,7 +8765,7 @@ var opentype = (() => {
   }
   var fvar_default = { make: makeFvarTable, parse: parseFvarTable };
 
-  // src/tables/stat.js
+  // src/tables/stat.mjs
   var axisRecordStruct = {
     tag: Parser.tag,
     nameID: Parser.uShort,
@@ -9126,7 +8968,7 @@ var opentype = (() => {
   }
   var stat_default = { make: makeSTATTable, parse: parseSTATTable };
 
-  // src/tables/avar.js
+  // src/tables/avar.mjs
   function makeAvarAxisValueMap(n, axisValueMap) {
     return new table_default.Record("axisValueMap_" + n, [
       { name: "fromCoordinate_" + n, type: "F2DOT14", value: axisValueMap.fromCoordinate },
@@ -9195,7 +9037,7 @@ var opentype = (() => {
   }
   var avar_default = { make: makeAvarTable, parse: parseAvarTable };
 
-  // src/tables/cvar.js
+  // src/tables/cvar.mjs
   function parseCvarTable(data, start, fvar, cvt) {
     const p = new parse_default.Parser(data, start);
     const cvtVariations = p.parseTupleVariationStore(
@@ -9219,7 +9061,7 @@ var opentype = (() => {
   }
   var cvar_default = { make: makeCvarTable, parse: parseCvarTable };
 
-  // src/tables/gvar.js
+  // src/tables/gvar.mjs
   function parseGvarTable(data, start, fvar, glyphs) {
     const p = new parse_default.Parser(data, start);
     const tableVersionMajor = p.parseUShort();
@@ -9247,7 +9089,7 @@ var opentype = (() => {
   }
   var gvar_default = { make: makeGvarTable, parse: parseGvarTable };
 
-  // src/tables/gasp.js
+  // src/tables/gasp.mjs
   function parseGaspTable(data, start) {
     const gasp = {};
     const p = new parse_default.Parser(data, start);
@@ -9276,14 +9118,13 @@ var opentype = (() => {
   }
   var gasp_default = { parse: parseGaspTable, make: makeGaspTable };
 
-  // src/tables/svg.js
+  // src/tables/svg.mjs
   function parseSvgTable(data, offset) {
     const svgTable = /* @__PURE__ */ new Map();
     const buf = data.buffer;
     const p = new Parser(data, offset);
     const version = p.parseUShort();
-    if (version !== 0)
-      return svgTable;
+    if (version !== 0) return svgTable;
     p.relativeOffset = p.parseOffset32();
     const svgDocumentListOffset = data.byteOffset + offset + p.relativeOffset;
     const numEntries = p.parseUShort();
@@ -9360,7 +9201,7 @@ var opentype = (() => {
     parse: parseSvgTable
   };
 
-  // src/tables/sfnt.js
+  // src/tables/sfnt.mjs
   function log2(v) {
     return Math.log(v) / Math.log(2) | 0;
   }
@@ -9486,8 +9327,7 @@ var opentype = (() => {
       } else {
         throw new Error("Unicode ranges bits > 123 are reserved for internal usage");
       }
-      if (glyph.name === ".notdef")
-        continue;
+      if (glyph.name === ".notdef") continue;
       const metrics = glyph.getMetrics();
       xMins.push(metrics.xMin);
       yMins.push(metrics.yMin);
@@ -9677,7 +9517,7 @@ var opentype = (() => {
   }
   var sfnt_default = { make: makeSfntTable, fontToTable: fontToSfntTable, computeCheckSum };
 
-  // src/layout.js
+  // src/layout.mjs
   function searchTag(arr, tag) {
     let imin = 0;
     let imax = arr.length - 1;
@@ -9728,8 +9568,7 @@ var opentype = (() => {
     }
     if (imin > 0) {
       range = ranges[imin - 1];
-      if (value > range.end)
-        return 0;
+      if (value > range.end) return 0;
       return range;
     }
   }
@@ -9798,13 +9637,10 @@ var opentype = (() => {
       let hasLatn = false;
       for (let i = 0; i < layout.scripts.length; i++) {
         const name = layout.scripts[i].tag;
-        if (name === "DFLT")
-          return name;
-        if (name === "latn")
-          hasLatn = true;
+        if (name === "DFLT") return name;
+        if (name === "latn") hasLatn = true;
       }
-      if (hasLatn)
-        return "latn";
+      if (hasLatn) return "latn";
     },
     /**
      * Returns all LangSysRecords in the given script.
@@ -10001,7 +9837,7 @@ var opentype = (() => {
   };
   var layout_default = Layout;
 
-  // src/position.js
+  // src/position.mjs
   function Position(font) {
     layout_default.call(this, font, "gpos");
   }
@@ -10016,8 +9852,7 @@ var opentype = (() => {
       for (let j = 0; j < subtables.length; j++) {
         const subtable = subtables[j];
         const covIndex = this.getCoverageIndex(subtable.coverage, leftIndex);
-        if (covIndex < 0)
-          continue;
+        if (covIndex < 0) continue;
         switch (subtable.posFormat) {
           case 1: {
             let pairSet = subtable.pairSets[covIndex];
@@ -10047,7 +9882,108 @@ var opentype = (() => {
   };
   var position_default = Position;
 
-  // src/substitution.js
+  // src/util.mjs
+  function arraysEqual(ar1, ar2) {
+    const n = ar1.length;
+    if (n !== ar2.length) {
+      return false;
+    }
+    for (let i = 0; i < n; i++) {
+      if (ar1[i] !== ar2[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+  function binarySearch(array, key, value) {
+    let low = 0, high = array.length - 1;
+    let result = null;
+    while (low <= high) {
+      const mid = Math.floor((low + high) / 2);
+      const record = array[mid];
+      const recordValue = record[key];
+      if (recordValue < value) {
+        low = mid + 1;
+      } else if (recordValue > value) {
+        high = mid - 1;
+      } else {
+        result = record;
+        break;
+      }
+    }
+    return result;
+  }
+  function binarySearchIndex(array, key, value) {
+    let low = 0, high = array.length - 1;
+    while (low <= high) {
+      const mid = Math.floor((low + high) / 2);
+      const element = array[mid];
+      if (element[key] < value) {
+        low = mid + 1;
+      } else if (element[key] > value) {
+        high = mid - 1;
+      } else {
+        return mid;
+      }
+    }
+    return -1;
+  }
+  function binarySearchInsert(array, key, value) {
+    let low = 0, high = array.length;
+    const compare = (a, b) => a[key] - b[key];
+    while (low < high) {
+      const mid = low + high >>> 1;
+      if (compare(array[mid], value) < 0) low = mid + 1;
+      else high = mid;
+    }
+    array.splice(low, 0, value);
+    return low;
+  }
+  function isGzip(buf) {
+    return buf[0] === 31 && buf[1] === 139 && buf[2] === 8;
+  }
+  function unGzip(gzip) {
+    const data = new DataView(gzip.buffer, gzip.byteOffset, gzip.byteLength);
+    let start = 10;
+    const end = gzip.byteLength - 8;
+    const flg = data.getInt8(3);
+    if (flg & 4) {
+      start += 2 + data.getUint16(start, true);
+    }
+    if (flg & 8) {
+      while (start < end) if (gzip[start++] === 0) break;
+    }
+    if (flg & 16) {
+      while (start < end) if (gzip[start++] === 0) break;
+    }
+    if (flg & 2) {
+      start += 2;
+    }
+    if (start >= end) throw new Error("Can't find compressed blocks");
+    const isize = data.getUint32(data.byteLength - 4, true);
+    return tinf_uncompress(gzip.subarray(start, end), new Uint8Array(isize));
+  }
+  function copyPoint(p) {
+    return {
+      x: p.x,
+      y: p.y,
+      onCurve: p.onCurve,
+      lastPointOfContour: p.lastPointOfContour
+    };
+  }
+  function copyComponent(c) {
+    return {
+      glyphIndex: c.glyphIndex,
+      xScale: c.xScale,
+      scale01: c.scale01,
+      scale10: c.scale10,
+      yScale: c.yScale,
+      dx: c.dx,
+      dy: c.dy
+    };
+  }
+
+  // src/substitution.mjs
   function Substitution(font) {
     layout_default.call(this, font, "gsub");
   }
@@ -10296,7 +10232,7 @@ var opentype = (() => {
   };
   var substitution_default = Substitution;
 
-  // src/palettes.js
+  // src/palettes.mjs
   var PaletteManager = class {
     // private properties don't work with reify
     // @TODO: refactor once we migrated to ES6 modules, see https://github.com/opentypejs/opentype.js/pull/579
@@ -10332,8 +10268,7 @@ var opentype = (() => {
     getAll(colorFormat) {
       const palettes = [];
       const cpal = this.cpal();
-      if (!cpal)
-        return palettes;
+      if (!cpal) return palettes;
       for (let i = 0; i < cpal.colorRecordIndices.length; i++) {
         const startIndex = cpal.colorRecordIndices[i];
         const paletteColors = [];
@@ -10553,7 +10488,7 @@ var opentype = (() => {
     }
   };
 
-  // src/layers.js
+  // src/layers.mjs
   var LayerManager = class {
     // private properties don't work with reify
     // @TODO: refactor once we migrated to ES6 modules, see https://github.com/opentypejs/opentype.js/pull/579
@@ -10717,15 +10652,14 @@ var opentype = (() => {
       if (layerDiff !== 0) {
         for (let i = 0; i < colr.baseGlyphRecords.length; i++) {
           const sibling = colr.baseGlyphRecords[i];
-          if (i === index || sibling.firstLayerIndex < baseGlyphRecord.firstLayerIndex)
-            continue;
+          if (i === index || sibling.firstLayerIndex < baseGlyphRecord.firstLayerIndex) continue;
           colr.baseGlyphRecords[i].firstLayerIndex += layerDiff;
         }
       }
     }
   };
 
-  // src/svgimages.js
+  // src/svgimages.mjs
   var SVGImageManager = class {
     /**
      * @param {opentype.Font} font
@@ -10756,11 +10690,9 @@ var opentype = (() => {
      */
     getOrCreateSvgImageCacheEntry(glyphIndex) {
       const svg = this.font.tables.svg;
-      if (svg === void 0)
-        return;
+      if (svg === void 0) return;
       const svgBuf = svg.get(glyphIndex);
-      if (svgBuf === void 0)
-        return;
+      if (svgBuf === void 0) return;
       let svgDocCacheEntry = this.cache.get(svgBuf);
       if (svgDocCacheEntry === void 0) {
         svgDocCacheEntry = createSvgDocCacheEntry(svgBuf);
@@ -10806,7 +10738,7 @@ var opentype = (() => {
       image: void 0
     };
   }
-  var decodeSvgDocument = globalThis.DecompressionStream ? decodeSvgDocumentWithDecompressionStream : decodeSvgDocumentWithTinyInflate;
+  var decodeSvgDocument = typeof DecompressionStream === "function" ? decodeSvgDocumentWithDecompressionStream : decodeSvgDocumentWithTinyInflate;
   function decodeSvgDocumentWithTinyInflate(buf) {
     try {
       return Promise.resolve(new TextDecoder().decode(isGzip(buf) ? unGzip(buf) : buf));
@@ -10873,16 +10805,14 @@ var opentype = (() => {
     const width = bbox.width * xScale;
     const height = bbox.height * yScale;
     svg.setAttribute("viewBox", [bbox.x, bbox.y, bbox.width, bbox.height].join(" "));
-    if (xScale !== 1)
-      svg.setAttribute("width", width);
-    if (yScale !== 1)
-      svg.setAttribute("height", height);
+    if (xScale !== 1) svg.setAttribute("width", width);
+    if (yScale !== 1) svg.setAttribute("height", height);
     const image = new Image(width, height);
     image.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg.outerHTML);
     return { leftSideBearing, baseline, image };
   }
 
-  // src/tables/glyf.js
+  // src/tables/glyf.mjs
   function parseGlyphCoordinate(p, flag, previousValue, shortVectorBitMask, sameBitMask) {
     let v;
     if ((flag & shortVectorBitMask) > 0) {
@@ -10902,16 +10832,16 @@ var opentype = (() => {
   }
   function parseGlyph(glyph, data, start) {
     const p = new parse_default.Parser(data, start);
-    glyph.numberOfContours = p.parseShort();
+    glyph._numberOfContours = p.parseShort();
     glyph._xMin = p.parseShort();
     glyph._yMin = p.parseShort();
     glyph._xMax = p.parseShort();
     glyph._yMax = p.parseShort();
     let flags;
     let flag;
-    if (glyph.numberOfContours > 0) {
+    if (glyph._numberOfContours > 0) {
       const endPointIndices = glyph.endPointIndices = [];
-      for (let i = 0; i < glyph.numberOfContours; i += 1) {
+      for (let i = 0; i < glyph._numberOfContours; i += 1) {
         endPointIndices.push(p.parseUShort());
       }
       glyph.instructionLength = p.parseUShort();
@@ -11153,7 +11083,7 @@ var opentype = (() => {
   }
   var glyf_default = { getPath, parse: parseGlyfTable };
 
-  // src/variationprocessor.js
+  // src/variationprocessor.mjs
   var VariationProcessor = class {
     constructor(font) {
       this.font = font;
@@ -11485,8 +11415,7 @@ var opentype = (() => {
     getCvarTransform(coords) {
       const cvt = this.font.tables.cvt;
       const variationData = this.cvar();
-      if (!cvt || !cvt.length || !variationData || !variationData.headers.length)
-        return cvt;
+      if (!cvt || !cvt.length || !variationData || !variationData.headers.length) return cvt;
       return this.applyTupleVariationStore(variationData, cvt, coords, "cvar");
     }
     /**
@@ -11625,7 +11554,7 @@ var opentype = (() => {
     }
   };
 
-  // src/variation.js
+  // src/variation.mjs
   var VariationManager = class {
     constructor(font) {
       this.font = font;
@@ -11758,7 +11687,7 @@ var opentype = (() => {
     }
   };
 
-  // src/hintingtt.js
+  // src/hintingtt.mjs
   var instructionTable;
   var exec;
   var execGlyph;
@@ -11801,8 +11730,7 @@ var opentype = (() => {
     v += threshold - phase;
     v = Math.trunc(v / period) * period;
     v += phase;
-    if (v < 0)
-      return phase * sign;
+    if (v < 0) return phase * sign;
     return v * sign;
   };
   var xUnitVector = {
@@ -12036,12 +11964,9 @@ var opentype = (() => {
     const d = Math.sqrt(x * x + y * y);
     x /= d;
     y /= d;
-    if (x === 1 && y === 0)
-      return xUnitVector;
-    else if (x === 0 && y === 1)
-      return yUnitVector;
-    else
-      return new UnitVector(x, y);
+    if (x === 1 && y === 0) return xUnitVector;
+    else if (x === 0 && y === 1) return yUnitVector;
+    else return new UnitVector(x, y);
   }
   function HPoint(x, y, lastPointOfContour, onCurve) {
     this.x = this.xo = Math.round(x * 64) / 64;
@@ -12056,14 +11981,12 @@ var opentype = (() => {
   }
   HPoint.prototype.nextTouched = function(v) {
     let p = this.nextPointOnContour;
-    while (!v.touched(p) && p !== this)
-      p = p.nextPointOnContour;
+    while (!v.touched(p) && p !== this) p = p.nextPointOnContour;
     return p;
   };
   HPoint.prototype.prevTouched = function(v) {
     let p = this.prevPointOnContour;
-    while (!v.touched(p) && p !== this)
-      p = p.prevPointOnContour;
+    while (!v.touched(p) && p !== this) p = p.prevPointOnContour;
     return p;
   };
   var HPZero = Object.freeze(new HPoint(0, 0));
@@ -12095,8 +12018,7 @@ var opentype = (() => {
     if (typeof ppem !== "number") {
       throw new Error("Point size is not a number!");
     }
-    if (this._errorState > 2)
-      return;
+    if (this._errorState > 2) return;
     const font = this.font;
     let prepState = this._prepState;
     if (!prepState || prepState.ppem !== ppem) {
@@ -12144,8 +12066,7 @@ var opentype = (() => {
         this._errorState = 2;
       }
     }
-    if (this._errorState > 1)
-      return;
+    if (this._errorState > 1) return;
     try {
       return execGlyph(glyph, prepState);
     } catch (e) {
@@ -12253,8 +12174,7 @@ var opentype = (() => {
         np.prevPointOnContour = cp;
       }
     }
-    if (state.inhibitGridFit)
-      return;
+    if (state.inhibitGridFit) return;
     if (false) {
       console.log("PROCESSING GLYPH", state.stack);
       for (let i = 0; i < pLen; i++) {
@@ -12276,13 +12196,11 @@ var opentype = (() => {
   };
   exec = function(state) {
     let prog = state.prog;
-    if (!prog)
-      return;
+    if (!prog) return;
     const pLen = prog.length;
     let ins;
     for (state.ip = 0; state.ip < pLen; state.ip++) {
-      if (false)
-        state.step++;
+      if (false) state.step++;
       ins = instructionTable[prog[state.ip]];
       if (!ins) {
         throw new Error(
@@ -12323,18 +12241,15 @@ var opentype = (() => {
     state.ip = ip;
   }
   function SVTCA(v, state) {
-    if (false)
-      console.log(state.step, "SVTCA[" + v.axis + "]");
+    if (false) console.log(state.step, "SVTCA[" + v.axis + "]");
     state.fv = state.pv = state.dpv = v;
   }
   function SPVTCA(v, state) {
-    if (false)
-      console.log(state.step, "SPVTCA[" + v.axis + "]");
+    if (false) console.log(state.step, "SPVTCA[" + v.axis + "]");
     state.pv = state.dpv = v;
   }
   function SFVTCA(v, state) {
-    if (false)
-      console.log(state.step, "SFVTCA[" + v.axis + "]");
+    if (false) console.log(state.step, "SFVTCA[" + v.axis + "]");
     state.fv = v;
   }
   function SPVTL(a, state) {
@@ -12343,8 +12258,7 @@ var opentype = (() => {
     const p1i = stack.pop();
     const p2 = state.z2[p2i];
     const p1 = state.z1[p1i];
-    if (false)
-      console.log("SPVTL[" + a + "]", p2i, p1i);
+    if (false) console.log("SPVTL[" + a + "]", p2i, p1i);
     let dx;
     let dy;
     if (!a) {
@@ -12362,8 +12276,7 @@ var opentype = (() => {
     const p1i = stack.pop();
     const p2 = state.z2[p2i];
     const p1 = state.z1[p1i];
-    if (false)
-      console.log("SFVTL[" + a + "]", p2i, p1i);
+    if (false) console.log("SFVTL[" + a + "]", p2i, p1i);
     let dx;
     let dy;
     if (!a) {
@@ -12379,38 +12292,33 @@ var opentype = (() => {
     const stack = state.stack;
     const y = stack.pop();
     const x = stack.pop();
-    if (false)
-      console.log(state.step, "SPVFS[]", y, x);
+    if (false) console.log(state.step, "SPVFS[]", y, x);
     state.pv = state.dpv = getUnitVector(x, y);
   }
   function SFVFS(state) {
     const stack = state.stack;
     const y = stack.pop();
     const x = stack.pop();
-    if (false)
-      console.log(state.step, "SPVFS[]", y, x);
+    if (false) console.log(state.step, "SPVFS[]", y, x);
     state.fv = getUnitVector(x, y);
   }
   function GPV(state) {
     const stack = state.stack;
     const pv = state.pv;
-    if (false)
-      console.log(state.step, "GPV[]");
+    if (false) console.log(state.step, "GPV[]");
     stack.push(pv.x * 16384);
     stack.push(pv.y * 16384);
   }
   function GFV(state) {
     const stack = state.stack;
     const fv = state.fv;
-    if (false)
-      console.log(state.step, "GFV[]");
+    if (false) console.log(state.step, "GFV[]");
     stack.push(fv.x * 16384);
     stack.push(fv.y * 16384);
   }
   function SFVTPV(state) {
     state.fv = state.pv;
-    if (false)
-      console.log(state.step, "SFVTPV[]");
+    if (false) console.log(state.step, "SFVTPV[]");
   }
   function ISECT(state) {
     const stack = state.stack;
@@ -12426,8 +12334,7 @@ var opentype = (() => {
     const pb0 = z1[pb0i];
     const pb1 = z1[pb1i];
     const p = state.z2[pi];
-    if (false)
-      console.log("ISECT[], ", pa0i, pa1i, pb0i, pb1i, pi);
+    if (false) console.log("ISECT[], ", pa0i, pa1i, pb0i, pb1i, pi);
     const x1 = pa0.x;
     const y1 = pa0.y;
     const x2 = pa1.x;
@@ -12444,28 +12351,23 @@ var opentype = (() => {
   }
   function SRP0(state) {
     state.rp0 = state.stack.pop();
-    if (false)
-      console.log(state.step, "SRP0[]", state.rp0);
+    if (false) console.log(state.step, "SRP0[]", state.rp0);
   }
   function SRP1(state) {
     state.rp1 = state.stack.pop();
-    if (false)
-      console.log(state.step, "SRP1[]", state.rp1);
+    if (false) console.log(state.step, "SRP1[]", state.rp1);
   }
   function SRP2(state) {
     state.rp2 = state.stack.pop();
-    if (false)
-      console.log(state.step, "SRP2[]", state.rp2);
+    if (false) console.log(state.step, "SRP2[]", state.rp2);
   }
   function SZP0(state) {
     const n = state.stack.pop();
-    if (false)
-      console.log(state.step, "SZP0[]", n);
+    if (false) console.log(state.step, "SZP0[]", n);
     state.zp0 = n;
     switch (n) {
       case 0:
-        if (!state.tZone)
-          initTZone(state);
+        if (!state.tZone) initTZone(state);
         state.z0 = state.tZone;
         break;
       case 1:
@@ -12477,13 +12379,11 @@ var opentype = (() => {
   }
   function SZP1(state) {
     const n = state.stack.pop();
-    if (false)
-      console.log(state.step, "SZP1[]", n);
+    if (false) console.log(state.step, "SZP1[]", n);
     state.zp1 = n;
     switch (n) {
       case 0:
-        if (!state.tZone)
-          initTZone(state);
+        if (!state.tZone) initTZone(state);
         state.z1 = state.tZone;
         break;
       case 1:
@@ -12495,13 +12395,11 @@ var opentype = (() => {
   }
   function SZP2(state) {
     const n = state.stack.pop();
-    if (false)
-      console.log(state.step, "SZP2[]", n);
+    if (false) console.log(state.step, "SZP2[]", n);
     state.zp2 = n;
     switch (n) {
       case 0:
-        if (!state.tZone)
-          initTZone(state);
+        if (!state.tZone) initTZone(state);
         state.z2 = state.tZone;
         break;
       case 1:
@@ -12513,13 +12411,11 @@ var opentype = (() => {
   }
   function SZPS(state) {
     const n = state.stack.pop();
-    if (false)
-      console.log(state.step, "SZPS[]", n);
+    if (false) console.log(state.step, "SZPS[]", n);
     state.zp0 = state.zp1 = state.zp2 = n;
     switch (n) {
       case 0:
-        if (!state.tZone)
-          initTZone(state);
+        if (!state.tZone) initTZone(state);
         state.z0 = state.z1 = state.z2 = state.tZone;
         break;
       case 1:
@@ -12531,133 +12427,112 @@ var opentype = (() => {
   }
   function SLOOP(state) {
     state.loop = state.stack.pop();
-    if (false)
-      console.log(state.step, "SLOOP[]", state.loop);
+    if (false) console.log(state.step, "SLOOP[]", state.loop);
   }
   function RTG(state) {
-    if (false)
-      console.log(state.step, "RTG[]");
+    if (false) console.log(state.step, "RTG[]");
     state.round = roundToGrid;
   }
   function RTHG(state) {
-    if (false)
-      console.log(state.step, "RTHG[]");
+    if (false) console.log(state.step, "RTHG[]");
     state.round = roundToHalfGrid;
   }
   function SMD(state) {
     const d = state.stack.pop();
-    if (false)
-      console.log(state.step, "SMD[]", d);
+    if (false) console.log(state.step, "SMD[]", d);
     state.minDis = d / 64;
   }
   function ELSE(state) {
-    if (false)
-      console.log(state.step, "ELSE[]");
+    if (false) console.log(state.step, "ELSE[]");
     skip(state, false);
   }
   function JMPR(state) {
     const o = state.stack.pop();
-    if (false)
-      console.log(state.step, "JMPR[]", o);
+    if (false) console.log(state.step, "JMPR[]", o);
     state.ip += o - 1;
   }
   function SCVTCI(state) {
     const n = state.stack.pop();
-    if (false)
-      console.log(state.step, "SCVTCI[]", n);
+    if (false) console.log(state.step, "SCVTCI[]", n);
     state.cvCutIn = n / 64;
   }
   function DUP(state) {
     const stack = state.stack;
-    if (false)
-      console.log(state.step, "DUP[]");
+    if (false) console.log(state.step, "DUP[]");
     stack.push(stack[stack.length - 1]);
   }
   function POP(state) {
-    if (false)
-      console.log(state.step, "POP[]");
+    if (false) console.log(state.step, "POP[]");
     state.stack.pop();
   }
   function CLEAR(state) {
-    if (false)
-      console.log(state.step, "CLEAR[]");
+    if (false) console.log(state.step, "CLEAR[]");
     state.stack.length = 0;
   }
   function SWAP(state) {
     const stack = state.stack;
     const a = stack.pop();
     const b = stack.pop();
-    if (false)
-      console.log(state.step, "SWAP[]");
+    if (false) console.log(state.step, "SWAP[]");
     stack.push(a);
     stack.push(b);
   }
   function DEPTH(state) {
     const stack = state.stack;
-    if (false)
-      console.log(state.step, "DEPTH[]");
+    if (false) console.log(state.step, "DEPTH[]");
     stack.push(stack.length);
   }
   function LOOPCALL(state) {
     const stack = state.stack;
     const fn = stack.pop();
     const c = stack.pop();
-    if (false)
-      console.log(state.step, "LOOPCALL[]", fn, c);
+    if (false) console.log(state.step, "LOOPCALL[]", fn, c);
     const cip = state.ip;
     const cprog = state.prog;
     state.prog = state.funcs[fn];
     for (let i = 0; i < c; i++) {
       exec(state);
-      if (false)
-        console.log(
-          ++state.step,
-          i + 1 < c ? "next loopcall" : "done loopcall",
-          i
-        );
+      if (false) console.log(
+        ++state.step,
+        i + 1 < c ? "next loopcall" : "done loopcall",
+        i
+      );
     }
     state.ip = cip;
     state.prog = cprog;
   }
   function CALL(state) {
     const fn = state.stack.pop();
-    if (false)
-      console.log(state.step, "CALL[]", fn);
+    if (false) console.log(state.step, "CALL[]", fn);
     const cip = state.ip;
     const cprog = state.prog;
     state.prog = state.funcs[fn];
     exec(state);
     state.ip = cip;
     state.prog = cprog;
-    if (false)
-      console.log(++state.step, "returning from", fn);
+    if (false) console.log(++state.step, "returning from", fn);
   }
   function CINDEX(state) {
     const stack = state.stack;
     const k = stack.pop();
-    if (false)
-      console.log(state.step, "CINDEX[]", k);
+    if (false) console.log(state.step, "CINDEX[]", k);
     stack.push(stack[stack.length - k]);
   }
   function MINDEX(state) {
     const stack = state.stack;
     const k = stack.pop();
-    if (false)
-      console.log(state.step, "MINDEX[]", k);
+    if (false) console.log(state.step, "MINDEX[]", k);
     stack.push(stack.splice(stack.length - k, 1)[0]);
   }
   function FDEF(state) {
-    if (state.env !== "fpgm")
-      throw new Error("FDEF not allowed here");
+    if (state.env !== "fpgm") throw new Error("FDEF not allowed here");
     const stack = state.stack;
     const prog = state.prog;
     let ip = state.ip;
     const fn = stack.pop();
     const ipBegin = ip;
-    if (false)
-      console.log(state.step, "FDEF[]", fn);
-    while (prog[++ip] !== 45)
-      ;
+    if (false) console.log(state.step, "FDEF[]", fn);
+    while (prog[++ip] !== 45) ;
     state.ip = ip;
     state.funcs[fn] = prog.slice(ipBegin + 1, ip);
   }
@@ -12666,11 +12541,9 @@ var opentype = (() => {
     const p = state.z0[pi];
     const fv = state.fv;
     const pv = state.pv;
-    if (false)
-      console.log(state.step, "MDAP[" + round + "]", pi);
+    if (false) console.log(state.step, "MDAP[" + round + "]", pi);
     let d = pv.distance(p, HPZero);
-    if (round)
-      d = state.round(d);
+    if (round) d = state.round(d);
     fv.setRelative(p, HPZero, d, pv);
     fv.touch(p);
     state.rp0 = state.rp1 = pi;
@@ -12681,15 +12554,12 @@ var opentype = (() => {
     let cp;
     let pp;
     let np;
-    if (false)
-      console.log(state.step, "IUP[" + v.axis + "]");
+    if (false) console.log(state.step, "IUP[" + v.axis + "]");
     for (let i = 0; i < pLen; i++) {
       cp = z2[i];
-      if (v.touched(cp))
-        continue;
+      if (v.touched(cp)) continue;
       pp = cp.prevTouched(v);
-      if (pp === cp)
-        continue;
+      if (pp === cp) continue;
       np = cp.nextTouched(v);
       if (pp === np) {
         v.setRelative(cp, cp, v.distance(pp, pp, false, true), v, true);
@@ -12730,12 +12600,10 @@ var opentype = (() => {
     const ci = stack.pop();
     const sp = state.z2[state.contours[ci]];
     let p = sp;
-    if (false)
-      console.log(state.step, "SHC[" + a + "]", ci);
+    if (false) console.log(state.step, "SHC[" + a + "]", ci);
     const d = pv.distance(rp, rp, false, true);
     do {
-      if (p !== rp)
-        fv.setRelative(p, p, d, pv);
+      if (p !== rp) fv.setRelative(p, p, d, pv);
       p = p.nextPointOnContour;
     } while (p !== sp);
   }
@@ -12746,8 +12614,7 @@ var opentype = (() => {
     const fv = state.fv;
     const pv = state.pv;
     const e = stack.pop();
-    if (false)
-      console.log(state.step, "SHZ[" + a + "]", e);
+    if (false) console.log(state.step, "SHZ[" + a + "]", e);
     let z;
     switch (e) {
       case 0:
@@ -12827,12 +12694,10 @@ var opentype = (() => {
     const pv = state.pv;
     fv.setRelative(p, rp0, d, pv);
     fv.touch(p);
-    if (false)
-      console.log(state.step, "MSIRP[" + a + "]", d, pi);
+    if (false) console.log(state.step, "MSIRP[" + a + "]", d, pi);
     state.rp1 = state.rp0;
     state.rp2 = pi;
-    if (a)
-      state.rp0 = pi;
+    if (a) state.rp0 = pi;
   }
   function ALIGNRP(state) {
     const stack = state.stack;
@@ -12858,8 +12723,7 @@ var opentype = (() => {
     state.loop = 1;
   }
   function RTDG(state) {
-    if (false)
-      console.log(state.step, "RTDG[]");
+    if (false) console.log(state.step, "RTDG[]");
     state.round = roundToDoubleGrid;
   }
   function MIAP(round, state) {
@@ -12883,8 +12747,7 @@ var opentype = (() => {
     }
     let d = pv.distance(p, HPZero);
     if (round) {
-      if (Math.abs(d - cv) < state.cvCutIn)
-        d = cv;
+      if (Math.abs(d - cv) < state.cvCutIn) d = cv;
       d = state.round(d);
     }
     fv.setRelative(p, HPZero, d, pv);
@@ -12900,10 +12763,8 @@ var opentype = (() => {
     let ip = state.ip;
     const stack = state.stack;
     const n = prog[++ip];
-    if (false)
-      console.log(state.step, "NPUSHB[]", n);
-    for (let i = 0; i < n; i++)
-      stack.push(prog[++ip]);
+    if (false) console.log(state.step, "NPUSHB[]", n);
+    for (let i = 0; i < n; i++) stack.push(prog[++ip]);
     state.ip = ip;
   }
   function NPUSHW(state) {
@@ -12911,12 +12772,10 @@ var opentype = (() => {
     const prog = state.prog;
     const stack = state.stack;
     const n = prog[++ip];
-    if (false)
-      console.log(state.step, "NPUSHW[]", n);
+    if (false) console.log(state.step, "NPUSHW[]", n);
     for (let i = 0; i < n; i++) {
       let w = prog[++ip] << 8 | prog[++ip];
-      if (w & 32768)
-        w = -((w ^ 65535) + 1);
+      if (w & 32768) w = -((w ^ 65535) + 1);
       stack.push(w);
     }
     state.ip = ip;
@@ -12924,20 +12783,17 @@ var opentype = (() => {
   function WS(state) {
     const stack = state.stack;
     let store = state.store;
-    if (!store)
-      store = state.store = [];
+    if (!store) store = state.store = [];
     const v = stack.pop();
     const l = stack.pop();
-    if (false)
-      console.log(state.step, "WS", v, l);
+    if (false) console.log(state.step, "WS", v, l);
     store[l] = v;
   }
   function RS(state) {
     const stack = state.stack;
     const store = state.store;
     const l = stack.pop();
-    if (false)
-      console.log(state.step, "RS", l);
+    if (false) console.log(state.step, "RS", l);
     const v = store && store[l] || 0;
     stack.push(v);
   }
@@ -12945,23 +12801,20 @@ var opentype = (() => {
     const stack = state.stack;
     const v = stack.pop();
     const l = stack.pop();
-    if (false)
-      console.log(state.step, "WCVTP", v, l);
+    if (false) console.log(state.step, "WCVTP", v, l);
     state.cvt[l] = v / 64;
   }
   function RCVT(state) {
     const stack = state.stack;
     const cvte = stack.pop();
-    if (false)
-      console.log(state.step, "RCVT", cvte);
+    if (false) console.log(state.step, "RCVT", cvte);
     stack.push(state.cvt[cvte] * 64);
   }
   function GC(a, state) {
     const stack = state.stack;
     const pi = stack.pop();
     const p = state.z2[pi];
-    if (false)
-      console.log(state.step, "GC[" + a + "]", pi);
+    if (false) console.log(state.step, "GC[" + a + "]", pi);
     stack.push(state.dpv.distance(p, HPZero, a, false) * 64);
   }
   function MD(a, state) {
@@ -12971,118 +12824,101 @@ var opentype = (() => {
     const p2 = state.z1[pi2];
     const p1 = state.z0[pi1];
     const d = state.dpv.distance(p1, p2, a, a);
-    if (false)
-      console.log(state.step, "MD[" + a + "]", pi2, pi1, "->", d);
+    if (false) console.log(state.step, "MD[" + a + "]", pi2, pi1, "->", d);
     state.stack.push(Math.round(d * 64));
   }
   function MPPEM(state) {
-    if (false)
-      console.log(state.step, "MPPEM[]");
+    if (false) console.log(state.step, "MPPEM[]");
     state.stack.push(state.ppem);
   }
   function FLIPON(state) {
-    if (false)
-      console.log(state.step, "FLIPON[]");
+    if (false) console.log(state.step, "FLIPON[]");
     state.autoFlip = true;
   }
   function LT(state) {
     const stack = state.stack;
     const e2 = stack.pop();
     const e1 = stack.pop();
-    if (false)
-      console.log(state.step, "LT[]", e2, e1);
+    if (false) console.log(state.step, "LT[]", e2, e1);
     stack.push(e1 < e2 ? 1 : 0);
   }
   function LTEQ(state) {
     const stack = state.stack;
     const e2 = stack.pop();
     const e1 = stack.pop();
-    if (false)
-      console.log(state.step, "LTEQ[]", e2, e1);
+    if (false) console.log(state.step, "LTEQ[]", e2, e1);
     stack.push(e1 <= e2 ? 1 : 0);
   }
   function GT(state) {
     const stack = state.stack;
     const e2 = stack.pop();
     const e1 = stack.pop();
-    if (false)
-      console.log(state.step, "GT[]", e2, e1);
+    if (false) console.log(state.step, "GT[]", e2, e1);
     stack.push(e1 > e2 ? 1 : 0);
   }
   function GTEQ(state) {
     const stack = state.stack;
     const e2 = stack.pop();
     const e1 = stack.pop();
-    if (false)
-      console.log(state.step, "GTEQ[]", e2, e1);
+    if (false) console.log(state.step, "GTEQ[]", e2, e1);
     stack.push(e1 >= e2 ? 1 : 0);
   }
   function EQ(state) {
     const stack = state.stack;
     const e2 = stack.pop();
     const e1 = stack.pop();
-    if (false)
-      console.log(state.step, "EQ[]", e2, e1);
+    if (false) console.log(state.step, "EQ[]", e2, e1);
     stack.push(e2 === e1 ? 1 : 0);
   }
   function NEQ(state) {
     const stack = state.stack;
     const e2 = stack.pop();
     const e1 = stack.pop();
-    if (false)
-      console.log(state.step, "NEQ[]", e2, e1);
+    if (false) console.log(state.step, "NEQ[]", e2, e1);
     stack.push(e2 !== e1 ? 1 : 0);
   }
   function ODD(state) {
     const stack = state.stack;
     const n = stack.pop();
-    if (false)
-      console.log(state.step, "ODD[]", n);
+    if (false) console.log(state.step, "ODD[]", n);
     stack.push(Math.trunc(n) & 1 ? 1 : 0);
   }
   function EVEN(state) {
     const stack = state.stack;
     const n = stack.pop();
-    if (false)
-      console.log(state.step, "EVEN[]", n);
+    if (false) console.log(state.step, "EVEN[]", n);
     stack.push(Math.trunc(n) & 1 ? 0 : 1);
   }
   function IF(state) {
     let test = state.stack.pop();
     let ins;
-    if (false)
-      console.log(state.step, "IF[]", test);
+    if (false) console.log(state.step, "IF[]", test);
     if (!test) {
       skip(state, true);
-      if (false)
-        console.log(state.step, ins === 27 ? "ELSE[]" : "EIF[]");
+      if (false) console.log(state.step, ins === 27 ? "ELSE[]" : "EIF[]");
     }
   }
   function EIF(state) {
-    if (false)
-      console.log(state.step, "EIF[]");
+    if (false) console.log(state.step, "EIF[]");
   }
   function AND(state) {
     const stack = state.stack;
     const e2 = stack.pop();
     const e1 = stack.pop();
-    if (false)
-      console.log(state.step, "AND[]", e2, e1);
+    if (false) console.log(state.step, "AND[]", e2, e1);
     stack.push(e2 && e1 ? 1 : 0);
   }
   function OR(state) {
     const stack = state.stack;
     const e2 = stack.pop();
     const e1 = stack.pop();
-    if (false)
-      console.log(state.step, "OR[]", e2, e1);
+    if (false) console.log(state.step, "OR[]", e2, e1);
     stack.push(e2 || e1 ? 1 : 0);
   }
   function NOT(state) {
     const stack = state.stack;
     const e = stack.pop();
-    if (false)
-      console.log(state.step, "NOT[]", e);
+    if (false) console.log(state.step, "NOT[]", e);
     stack.push(e ? 0 : 1);
   }
   function DELTAP123(b, state) {
@@ -13094,19 +12930,15 @@ var opentype = (() => {
     const base = state.deltaBase + (b - 1) * 16;
     const ds = state.deltaShift;
     const z0 = state.z0;
-    if (false)
-      console.log(state.step, "DELTAP[" + b + "]", n, stack);
+    if (false) console.log(state.step, "DELTAP[" + b + "]", n, stack);
     for (let i = 0; i < n; i++) {
       const pi = stack.pop();
       const arg = stack.pop();
       const appem = base + ((arg & 240) >> 4);
-      if (appem !== ppem)
-        continue;
+      if (appem !== ppem) continue;
       let mag = (arg & 15) - 8;
-      if (mag >= 0)
-        mag++;
-      if (false)
-        console.log(state.step, "DELTAPFIX", pi, "by", mag * ds);
+      if (mag >= 0) mag++;
+      if (false) console.log(state.step, "DELTAPFIX", pi, "by", mag * ds);
       const p = z0[pi];
       fv.setRelative(p, p, mag * ds, pv);
     }
@@ -13114,90 +12946,78 @@ var opentype = (() => {
   function SDB(state) {
     const stack = state.stack;
     const n = stack.pop();
-    if (false)
-      console.log(state.step, "SDB[]", n);
+    if (false) console.log(state.step, "SDB[]", n);
     state.deltaBase = n;
   }
   function SDS(state) {
     const stack = state.stack;
     const n = stack.pop();
-    if (false)
-      console.log(state.step, "SDS[]", n);
+    if (false) console.log(state.step, "SDS[]", n);
     state.deltaShift = Math.pow(0.5, n);
   }
   function ADD(state) {
     const stack = state.stack;
     const n2 = stack.pop();
     const n1 = stack.pop();
-    if (false)
-      console.log(state.step, "ADD[]", n2, n1);
+    if (false) console.log(state.step, "ADD[]", n2, n1);
     stack.push(n1 + n2);
   }
   function SUB(state) {
     const stack = state.stack;
     const n2 = stack.pop();
     const n1 = stack.pop();
-    if (false)
-      console.log(state.step, "SUB[]", n2, n1);
+    if (false) console.log(state.step, "SUB[]", n2, n1);
     stack.push(n1 - n2);
   }
   function DIV(state) {
     const stack = state.stack;
     const n2 = stack.pop();
     const n1 = stack.pop();
-    if (false)
-      console.log(state.step, "DIV[]", n2, n1);
+    if (false) console.log(state.step, "DIV[]", n2, n1);
     stack.push(n1 * 64 / n2);
   }
   function MUL(state) {
     const stack = state.stack;
     const n2 = stack.pop();
     const n1 = stack.pop();
-    if (false)
-      console.log(state.step, "MUL[]", n2, n1);
+    if (false) console.log(state.step, "MUL[]", n2, n1);
     stack.push(n1 * n2 / 64);
   }
   function ABS(state) {
     const stack = state.stack;
     const n = stack.pop();
-    if (false)
-      console.log(state.step, "ABS[]", n);
+    if (false) console.log(state.step, "ABS[]", n);
     stack.push(Math.abs(n));
   }
   function NEG(state) {
     const stack = state.stack;
     let n = stack.pop();
-    if (false)
-      console.log(state.step, "NEG[]", n);
+    if (false) console.log(state.step, "NEG[]", n);
     stack.push(-n);
   }
   function FLOOR(state) {
     const stack = state.stack;
     const n = stack.pop();
-    if (false)
-      console.log(state.step, "FLOOR[]", n);
+    if (false) console.log(state.step, "FLOOR[]", n);
     stack.push(Math.floor(n / 64) * 64);
   }
   function CEILING(state) {
     const stack = state.stack;
     const n = stack.pop();
-    if (false)
-      console.log(state.step, "CEILING[]", n);
+    if (false) console.log(state.step, "CEILING[]", n);
     stack.push(Math.ceil(n / 64) * 64);
   }
   function ROUND(dt, state) {
     const stack = state.stack;
     const n = stack.pop();
-    if (false)
-      console.log(state.step, "ROUND[]");
+    if (false) console.log(state.step, "ROUND[]");
     stack.push(state.round(n / 64) * 64);
   }
   function WCVTF(state) {
     const stack = state.stack;
     const v = stack.pop();
     const l = stack.pop();
-    if (false)
-      console.log(state.step, "WCVTF[]", v, l);
+    if (false) console.log(state.step, "WCVTF[]", v, l);
     state.cvt[l] = v * state.ppem / state.font.unitsPerEm;
   }
   function DELTAC123(b, state) {
@@ -13206,27 +13026,22 @@ var opentype = (() => {
     const ppem = state.ppem;
     const base = state.deltaBase + (b - 1) * 16;
     const ds = state.deltaShift;
-    if (false)
-      console.log(state.step, "DELTAC[" + b + "]", n, stack);
+    if (false) console.log(state.step, "DELTAC[" + b + "]", n, stack);
     for (let i = 0; i < n; i++) {
       const c = stack.pop();
       const arg = stack.pop();
       const appem = base + ((arg & 240) >> 4);
-      if (appem !== ppem)
-        continue;
+      if (appem !== ppem) continue;
       let mag = (arg & 15) - 8;
-      if (mag >= 0)
-        mag++;
+      if (mag >= 0) mag++;
       const delta = mag * ds;
-      if (false)
-        console.log(state.step, "DELTACFIX", c, "by", delta);
+      if (false) console.log(state.step, "DELTACFIX", c, "by", delta);
       state.cvt[c] += delta;
     }
   }
   function SROUND(state) {
     let n = state.stack.pop();
-    if (false)
-      console.log(state.step, "SROUND[]", n);
+    if (false) console.log(state.step, "SROUND[]", n);
     state.round = roundSuper;
     let period;
     switch (n & 192) {
@@ -13260,15 +13075,12 @@ var opentype = (() => {
         throw new Error("invalid SROUND value");
     }
     n &= 15;
-    if (n === 0)
-      state.srThreshold = 0;
-    else
-      state.srThreshold = (n / 8 - 0.5) * period;
+    if (n === 0) state.srThreshold = 0;
+    else state.srThreshold = (n / 8 - 0.5) * period;
   }
   function S45ROUND(state) {
     let n = state.stack.pop();
-    if (false)
-      console.log(state.step, "S45ROUND[]", n);
+    if (false) console.log(state.step, "S45ROUND[]", n);
     state.round = roundSuper;
     let period;
     switch (n & 192) {
@@ -13302,30 +13114,24 @@ var opentype = (() => {
         throw new Error("invalid S45ROUND value");
     }
     n &= 15;
-    if (n === 0)
-      state.srThreshold = 0;
-    else
-      state.srThreshold = (n / 8 - 0.5) * period;
+    if (n === 0) state.srThreshold = 0;
+    else state.srThreshold = (n / 8 - 0.5) * period;
   }
   function ROFF(state) {
-    if (false)
-      console.log(state.step, "ROFF[]");
+    if (false) console.log(state.step, "ROFF[]");
     state.round = roundOff;
   }
   function RUTG(state) {
-    if (false)
-      console.log(state.step, "RUTG[]");
+    if (false) console.log(state.step, "RUTG[]");
     state.round = roundUpToGrid;
   }
   function RDTG(state) {
-    if (false)
-      console.log(state.step, "RDTG[]");
+    if (false) console.log(state.step, "RDTG[]");
     state.round = roundDownToGrid;
   }
   function SCANCTRL(state) {
     const n = state.stack.pop();
-    if (false)
-      console.log(state.step, "SCANCTRL[]", n);
+    if (false) console.log(state.step, "SCANCTRL[]", n);
   }
   function SDPVTL(a, state) {
     const stack = state.stack;
@@ -13333,8 +13139,7 @@ var opentype = (() => {
     const p1i = stack.pop();
     const p2 = state.z2[p2i];
     const p1 = state.z1[p1i];
-    if (false)
-      console.log(state.step, "SDPVTL[" + a + "]", p2i, p1i);
+    if (false) console.log(state.step, "SDPVTL[" + a + "]", p2i, p1i);
     let dx;
     let dy;
     if (!a) {
@@ -13350,12 +13155,9 @@ var opentype = (() => {
     const stack = state.stack;
     const sel = stack.pop();
     let r = 0;
-    if (false)
-      console.log(state.step, "GETINFO[]", sel);
-    if (sel & 1)
-      r = 35;
-    if (sel & 32)
-      r |= 4096;
+    if (false) console.log(state.step, "GETINFO[]", sel);
+    if (sel & 1) r = 35;
+    if (sel & 32) r |= 4096;
     stack.push(r);
   }
   function ROLL(state) {
@@ -13363,8 +13165,7 @@ var opentype = (() => {
     const a = stack.pop();
     const b = stack.pop();
     const c = stack.pop();
-    if (false)
-      console.log(state.step, "ROLL[]");
+    if (false) console.log(state.step, "ROLL[]");
     stack.push(b);
     stack.push(a);
     stack.push(c);
@@ -13373,28 +13174,24 @@ var opentype = (() => {
     const stack = state.stack;
     const e2 = stack.pop();
     const e1 = stack.pop();
-    if (false)
-      console.log(state.step, "MAX[]", e2, e1);
+    if (false) console.log(state.step, "MAX[]", e2, e1);
     stack.push(Math.max(e1, e2));
   }
   function MIN(state) {
     const stack = state.stack;
     const e2 = stack.pop();
     const e1 = stack.pop();
-    if (false)
-      console.log(state.step, "MIN[]", e2, e1);
+    if (false) console.log(state.step, "MIN[]", e2, e1);
     stack.push(Math.min(e1, e2));
   }
   function SCANTYPE(state) {
     const n = state.stack.pop();
-    if (false)
-      console.log(state.step, "SCANTYPE[]", n);
+    if (false) console.log(state.step, "SCANTYPE[]", n);
   }
   function INSTCTRL(state) {
     const s = state.stack.pop();
     let v = state.stack.pop();
-    if (false)
-      console.log(state.step, "INSTCTRL[]", s, v);
+    if (false) console.log(state.step, "INSTCTRL[]", s, v);
     switch (s) {
       case 1:
         state.inhibitGridFit = !!v;
@@ -13410,22 +13207,18 @@ var opentype = (() => {
     const stack = state.stack;
     const prog = state.prog;
     let ip = state.ip;
-    if (false)
-      console.log(state.step, "PUSHB[" + n + "]");
-    for (let i = 0; i < n; i++)
-      stack.push(prog[++ip]);
+    if (false) console.log(state.step, "PUSHB[" + n + "]");
+    for (let i = 0; i < n; i++) stack.push(prog[++ip]);
     state.ip = ip;
   }
   function PUSHW(n, state) {
     let ip = state.ip;
     const prog = state.prog;
     const stack = state.stack;
-    if (false)
-      console.log(state.ip, "PUSHW[" + n + "]");
+    if (false) console.log(state.ip, "PUSHW[" + n + "]");
     for (let i = 0; i < n; i++) {
       let w = prog[++ip] << 8 | prog[++ip];
-      if (w & 32768)
-        w = -((w ^ 65535) + 1);
+      if (w & 32768) w = -((w ^ 65535) + 1);
       stack.push(w);
     }
     state.ip = ip;
@@ -13449,13 +13242,10 @@ var opentype = (() => {
     d = Math.abs(d);
     if (indirect) {
       cv = state.cvt[cvte];
-      if (ro && Math.abs(d - cv) < state.cvCutIn)
-        d = cv;
+      if (ro && Math.abs(d - cv) < state.cvCutIn) d = cv;
     }
-    if (keepD && d < md)
-      d = md;
-    if (ro)
-      d = state.round(d);
+    if (keepD && d < md) d = md;
+    if (ro) d = state.round(d);
     fv.setRelative(p, rp, sign * d, pv);
     fv.touch(p);
     if (false) {
@@ -13473,8 +13263,7 @@ var opentype = (() => {
     }
     state.rp1 = state.rp0;
     state.rp2 = pi;
-    if (setRp0)
-      state.rp0 = pi;
+    if (setRp0) state.rp0 = pi;
   }
   instructionTable = [
     /* 0x00 */
@@ -14013,7 +13802,7 @@ var opentype = (() => {
   ];
   var hintingtt_default = Hinting;
 
-  // src/tokenizer.js
+  // src/tokenizer.mjs
   function Token(char) {
     this.char = char;
     this.state = {};
@@ -14128,8 +13917,7 @@ var opentype = (() => {
         this.tokens,
         [startIndex, offset].concat(tokens)
       );
-      if (!silent)
-        this.dispatch("replaceToken", [startIndex, offset, tokens]);
+      if (!silent) this.dispatch("replaceToken", [startIndex, offset, tokens]);
       return [replaced, tokens];
     } else {
       return { FAIL: "replaceRange: invalid tokens or startIndex." };
@@ -14138,8 +13926,7 @@ var opentype = (() => {
   Tokenizer.prototype.replaceToken = function(index, token, silent) {
     if (!isNaN(index) && this.inboundIndex(index) && token instanceof Token) {
       const replaced = this.tokens.splice(index, 1, token);
-      if (!silent)
-        this.dispatch("replaceToken", [index, token]);
+      if (!silent) this.dispatch("replaceToken", [index, token]);
       return [replaced[0], token];
     } else {
       return { FAIL: "replaceToken: invalid token or index." };
@@ -14148,15 +13935,13 @@ var opentype = (() => {
   Tokenizer.prototype.removeRange = function(startIndex, offset, silent) {
     offset = !isNaN(offset) ? offset : this.tokens.length;
     const tokens = this.tokens.splice(startIndex, offset);
-    if (!silent)
-      this.dispatch("removeRange", [tokens, startIndex, offset]);
+    if (!silent) this.dispatch("removeRange", [tokens, startIndex, offset]);
     return tokens;
   };
   Tokenizer.prototype.removeToken = function(index, silent) {
     if (!isNaN(index) && this.inboundIndex(index)) {
       const token = this.tokens.splice(index, 1);
-      if (!silent)
-        this.dispatch("removeToken", [token, index]);
+      if (!silent) this.dispatch("removeToken", [token, index]);
       return token;
     } else {
       return { FAIL: "removeToken: invalid token index." };
@@ -14171,8 +13956,7 @@ var opentype = (() => {
         this.tokens,
         [index, 0].concat(tokens)
       );
-      if (!silent)
-        this.dispatch("insertToken", [tokens, index]);
+      if (!silent) this.dispatch("insertToken", [tokens, index]);
       return tokens;
     } else {
       return { FAIL: "insertToken: invalid token(s)." };
@@ -14248,18 +14032,15 @@ var opentype = (() => {
     }
   };
   Tokenizer.prototype.registerContextChecker = function(contextName, contextStartCheck, contextEndCheck) {
-    if (this.getContext(contextName))
-      return {
-        FAIL: `context name '${contextName}' is already registered.`
-      };
-    if (typeof contextStartCheck !== "function")
-      return {
-        FAIL: "missing context start check."
-      };
-    if (typeof contextEndCheck !== "function")
-      return {
-        FAIL: "missing context end check."
-      };
+    if (this.getContext(contextName)) return {
+      FAIL: `context name '${contextName}' is already registered.`
+    };
+    if (typeof contextStartCheck !== "function") return {
+      FAIL: "missing context start check."
+    };
+    if (typeof contextEndCheck !== "function") return {
+      FAIL: "missing context end check."
+    };
     const contextCheckers = new ContextChecker(
       contextName,
       contextStartCheck,
@@ -14347,7 +14128,7 @@ var opentype = (() => {
   };
   var tokenizer_default = Tokenizer;
 
-  // src/char.js
+  // src/char.mjs
   function isArabicChar(c) {
     return /[\u0600-\u065F\u066A-\u06D2\u06FA-\u06FF]/.test(c);
   }
@@ -14367,7 +14148,7 @@ var opentype = (() => {
     return /\s/.test(c);
   }
 
-  // src/features/featureQuery.js
+  // src/features/featureQuery.mjs
   function FeatureQuery(font) {
     this.font = font;
     this.features = {};
@@ -14378,8 +14159,7 @@ var opentype = (() => {
     this.substitution = action.substitution;
   }
   function lookupCoverage(glyphIndex, coverage) {
-    if (!glyphIndex)
-      return -1;
+    if (!glyphIndex) return -1;
     switch (coverage.format) {
       case 1:
         return coverage.glyphs.indexOf(glyphIndex);
@@ -14401,14 +14181,12 @@ var opentype = (() => {
   }
   function singleSubstitutionFormat1(glyphIndex, subtable) {
     let substituteIndex = lookupCoverage(glyphIndex, subtable.coverage);
-    if (substituteIndex === -1)
-      return null;
+    if (substituteIndex === -1) return null;
     return glyphIndex + subtable.deltaGlyphId;
   }
   function singleSubstitutionFormat2(glyphIndex, subtable) {
     let substituteIndex = lookupCoverage(glyphIndex, subtable.coverage);
-    if (substituteIndex === -1)
-      return null;
+    if (substituteIndex === -1) return null;
     return subtable.substitute[substituteIndex];
   }
   function lookupCoverageList(coverageList, contextParams) {
@@ -14422,23 +14200,19 @@ var opentype = (() => {
         lookupList.push(lookupIndex);
       }
     }
-    if (lookupList.length !== coverageList.length)
-      return -1;
+    if (lookupList.length !== coverageList.length) return -1;
     return lookupList;
   }
   function chainingSubstitutionFormat3(contextParams, subtable) {
     const lookupsCount = subtable.inputCoverage.length + subtable.lookaheadCoverage.length + subtable.backtrackCoverage.length;
-    if (contextParams.context.length < lookupsCount)
-      return [];
+    if (contextParams.context.length < lookupsCount) return [];
     let inputLookups = lookupCoverageList(
       subtable.inputCoverage,
       contextParams
     );
-    if (inputLookups === -1)
-      return [];
+    if (inputLookups === -1) return [];
     const lookaheadOffset = subtable.inputCoverage.length - 1;
-    if (contextParams.lookahead.length < subtable.lookaheadCoverage.length)
-      return [];
+    if (contextParams.lookahead.length < subtable.lookaheadCoverage.length) return [];
     let lookaheadContext = contextParams.lookahead.slice(lookaheadOffset);
     while (lookaheadContext.length && isTashkeelArabicChar(lookaheadContext[0].char)) {
       lookaheadContext.shift();
@@ -14453,8 +14227,7 @@ var opentype = (() => {
     while (backtrackContext.length && isTashkeelArabicChar(backtrackContext[0].char)) {
       backtrackContext.shift();
     }
-    if (backtrackContext.length < subtable.backtrackCoverage.length)
-      return [];
+    if (backtrackContext.length < subtable.backtrackCoverage.length) return [];
     const backtrackParams = new ContextParams(backtrackContext, 0);
     let backtrackLookups = lookupCoverageList(
       subtable.backtrackCoverage,
@@ -14482,8 +14255,7 @@ var opentype = (() => {
             for (let n = 0; n < inputLookups.length; n++) {
               const glyphIndex = contextParams.get(n);
               const substitution = lookup(glyphIndex);
-              if (substitution)
-                substitutions.push(substitution);
+              if (substitution) substitutions.push(substitution);
             }
           } else {
             throw new Error(`Substitution type ${substitutionType} is not supported in chaining substitution`);
@@ -14496,8 +14268,7 @@ var opentype = (() => {
   function ligatureSubstitutionFormat1(contextParams, subtable) {
     let glyphIndex = contextParams.current;
     let ligSetIndex = lookupCoverage(glyphIndex, subtable.coverage);
-    if (ligSetIndex === -1)
-      return null;
+    if (ligSetIndex === -1) return null;
     let ligature;
     let ligatureSet = subtable.ligatureSets[ligSetIndex];
     for (let s = 0; s < ligatureSet.length; s++) {
@@ -14505,10 +14276,8 @@ var opentype = (() => {
       for (let l = 0; l < ligature.components.length; l++) {
         const lookaheadItem = contextParams.lookahead[l];
         const component = ligature.components[l];
-        if (lookaheadItem !== component)
-          break;
-        if (l === ligature.components.length - 1)
-          return ligature;
+        if (lookaheadItem !== component) break;
+        if (l === ligature.components.length - 1) return ligature;
       }
     }
     return null;
@@ -14589,25 +14358,21 @@ var opentype = (() => {
   }
   function decompositionSubstitutionFormat1(glyphIndex, subtable) {
     let substituteIndex = lookupCoverage(glyphIndex, subtable.coverage);
-    if (substituteIndex === -1)
-      return null;
+    if (substituteIndex === -1) return null;
     return subtable.sequences[substituteIndex];
   }
   FeatureQuery.prototype.getDefaultScriptFeaturesIndexes = function() {
     const scripts = this.font.tables.gsub.scripts;
     for (let s = 0; s < scripts.length; s++) {
       const script = scripts[s];
-      if (script.tag === "DFLT")
-        return script.script.defaultLangSys.featureIndexes;
+      if (script.tag === "DFLT") return script.script.defaultLangSys.featureIndexes;
     }
     return [];
   };
   FeatureQuery.prototype.getScriptFeaturesIndexes = function(scriptTag) {
     const tables = this.font.tables;
-    if (!tables.gsub)
-      return [];
-    if (!scriptTag)
-      return this.getDefaultScriptFeaturesIndexes();
+    if (!tables.gsub) return [];
+    if (!scriptTag) return this.getDefaultScriptFeaturesIndexes();
     const scripts = this.font.tables.gsub.scripts;
     for (let i = 0; i < scripts.length; i++) {
       const script = scripts[i];
@@ -14639,11 +14404,9 @@ var opentype = (() => {
   };
   FeatureQuery.prototype.getScriptFeatures = function(scriptTag) {
     let features = this.features[scriptTag];
-    if (Object.prototype.hasOwnProperty.call(this.features, scriptTag))
-      return features;
+    if (Object.prototype.hasOwnProperty.call(this.features, scriptTag)) return features;
     const featuresIndexes = this.getScriptFeaturesIndexes(scriptTag);
-    if (!featuresIndexes)
-      return null;
+    if (!featuresIndexes) return null;
     const gsub = this.font.tables.gsub;
     features = featuresIndexes.map((index) => gsub.features[index]);
     this.features[scriptTag] = features;
@@ -14706,10 +14469,9 @@ var opentype = (() => {
       tag: query.tag,
       script: query.script
     });
-    if (!feature)
-      return new Error(
-        `font '${(this.font.names.unicode || this.font.names.windows || this.font.names.macintosh).fullName.en}' doesn't support feature '${query.tag}' for script '${query.script}'.`
-      );
+    if (!feature) return new Error(
+      `font '${(this.font.names.unicode || this.font.names.windows || this.font.names.macintosh).fullName.en}' doesn't support feature '${query.tag}' for script '${query.script}'.`
+    );
     const lookups = this.getFeatureLookups(feature);
     const substitutions = [].concat(contextParams.context);
     for (let l = 0; l < lookups.length; l++) {
@@ -14791,20 +14553,17 @@ var opentype = (() => {
             break;
         }
         contextParams = new ContextParams(substitutions, currentIndex);
-        if (Array.isArray(substitution) && !substitution.length)
-          continue;
+        if (Array.isArray(substitution) && !substitution.length) continue;
         substitution = null;
       }
     }
     return substitutions.length ? substitutions : null;
   };
   FeatureQuery.prototype.supports = function(query) {
-    if (!query.script)
-      return false;
+    if (!query.script) return false;
     this.getScriptFeatures(query.script);
     const supportedScript = Object.prototype.hasOwnProperty.call(this.features, query.script);
-    if (!query.tag)
-      return supportedScript;
+    if (!query.tag) return supportedScript;
     const supportedFeature = this.features[query.script].some((feature) => feature.tag === query.tag);
     return supportedScript && supportedFeature;
   };
@@ -14819,21 +14578,18 @@ var opentype = (() => {
     return feature.lookupListIndexes.map(this.getLookupByIndex.bind(this));
   };
   FeatureQuery.prototype.getFeature = function getFeature(query) {
-    if (!this.font)
-      return { FAIL: "No font was found" };
+    if (!this.font) return { FAIL: "No font was found" };
     if (!Object.prototype.hasOwnProperty.call(this.features, query.script)) {
       this.getScriptFeatures(query.script);
     }
     const scriptFeatures = this.features[query.script];
-    if (!scriptFeatures)
-      return { FAIL: `No feature for script ${query.script}` };
-    if (!scriptFeatures.tags[query.tag])
-      return null;
+    if (!scriptFeatures) return { FAIL: `No feature for script ${query.script}` };
+    if (!scriptFeatures.tags[query.tag]) return null;
     return this.features[query.script].tags[query.tag];
   };
   var featureQuery_default = FeatureQuery;
 
-  // src/features/arab/contextCheck/arabicWord.js
+  // src/features/arab/contextCheck/arabicWord.mjs
   function arabicWordStartCheck(contextParams) {
     const char = contextParams.current;
     const prevChar = contextParams.get(-1);
@@ -14856,7 +14612,7 @@ var opentype = (() => {
     endCheck: arabicWordEndCheck
   };
 
-  // src/features/arab/contextCheck/arabicSentence.js
+  // src/features/arab/contextCheck/arabicSentence.mjs
   function arabicSentenceStartCheck(contextParams) {
     const char = contextParams.current;
     const prevChar = contextParams.get(-1);
@@ -14872,15 +14628,13 @@ var opentype = (() => {
         return true;
       case (!isArabicChar(nextChar) && !isTashkeelArabicChar(nextChar)): {
         const nextIsWhitespace = isWhiteSpace(nextChar);
-        if (!nextIsWhitespace)
-          return true;
+        if (!nextIsWhitespace) return true;
         if (nextIsWhitespace) {
           let arabicCharAhead = false;
           arabicCharAhead = contextParams.lookahead.some(
             (c) => isArabicChar(c) || isTashkeelArabicChar(c)
           );
-          if (!arabicCharAhead)
-            return true;
+          if (!arabicCharAhead) return true;
         }
         break;
       }
@@ -14893,7 +14647,7 @@ var opentype = (() => {
     endCheck: arabicSentenceEndCheck
   };
 
-  // src/features/applySubstitution.js
+  // src/features/applySubstitution.mjs
   function singleSubstitutionFormat12(action, tokens, index) {
     tokens[index].setState(action.tag, action.substitution);
   }
@@ -14939,28 +14693,24 @@ var opentype = (() => {
   }
   var applySubstitution_default = applySubstitution;
 
-  // src/features/arab/arabicPresentationForms.js
+  // src/features/arab/arabicPresentationForms.mjs
   function willConnectPrev(charContextParams) {
     let backtrack = [].concat(charContextParams.backtrack);
     for (let i = backtrack.length - 1; i >= 0; i--) {
       const prevChar = backtrack[i];
       const isolated = isIsolatedArabicChar(prevChar);
       const tashkeel = isTashkeelArabicChar(prevChar);
-      if (!isolated && !tashkeel)
-        return true;
-      if (isolated)
-        return false;
+      if (!isolated && !tashkeel) return true;
+      if (isolated) return false;
     }
     return false;
   }
   function willConnectNext(charContextParams) {
-    if (isIsolatedArabicChar(charContextParams.current))
-      return false;
+    if (isIsolatedArabicChar(charContextParams.current)) return false;
     for (let i = 0; i < charContextParams.lookahead.length; i++) {
       const nextChar = charContextParams.lookahead[i];
       const tashkeel = isTashkeelArabicChar(nextChar);
-      if (!tashkeel)
-        return true;
+      if (!tashkeel) return true;
     }
     return false;
   }
@@ -14968,8 +14718,7 @@ var opentype = (() => {
     const script = "arab";
     const tags = this.featuresTags[script];
     const tokens = this.tokenizer.getRangeTokens(range);
-    if (tokens.length === 1)
-      return;
+    if (tokens.length === 1) return;
     let contextParams = new ContextParams(
       tokens.map(
         (token) => token.getState("glyphIndex")
@@ -14984,15 +14733,12 @@ var opentype = (() => {
     );
     for (let i = 0; i < tokens.length; i++) {
       const token = tokens[i];
-      if (isTashkeelArabicChar(token.char))
-        continue;
+      if (isTashkeelArabicChar(token.char)) continue;
       contextParams.setCurrentIndex(i);
       charContextParams.setCurrentIndex(i);
       let CONNECT = 0;
-      if (willConnectPrev(charContextParams))
-        CONNECT |= 1;
-      if (willConnectNext(charContextParams))
-        CONNECT |= 2;
+      if (willConnectPrev(charContextParams)) CONNECT |= 1;
+      if (willConnectNext(charContextParams)) CONNECT |= 2;
       let tag;
       switch (CONNECT) {
         case 1:
@@ -15005,8 +14751,7 @@ var opentype = (() => {
           tag = "medi";
           break;
       }
-      if (tags.indexOf(tag) === -1)
-        continue;
+      if (tags.indexOf(tag) === -1) continue;
       let substitutions = this.query.lookupFeature({
         tag,
         script,
@@ -15027,7 +14772,7 @@ var opentype = (() => {
   }
   var arabicPresentationForms_default = arabicPresentationForms;
 
-  // src/features/arab/arabicRequiredLigatures.js
+  // src/features/arab/arabicRequiredLigatures.mjs
   function getContextParams(tokens, index) {
     const context = tokens.map((token) => token.activeState.value);
     return new ContextParams(context, index || 0);
@@ -15054,7 +14799,7 @@ var opentype = (() => {
   }
   var arabicRequiredLigatures_default = arabicRequiredLigatures;
 
-  // src/features/ccmp/contextCheck/ccmpReplacement.js
+  // src/features/ccmp/contextCheck/ccmpReplacement.mjs
   function ccmpReplacementStartCheck(contextParams) {
     return contextParams.index === 0 && contextParams.context.length > 1;
   }
@@ -15066,7 +14811,7 @@ var opentype = (() => {
     endCheck: ccmpReplacementEndCheck
   };
 
-  // src/features/ccmp/ccmpReplacementLigatures.js
+  // src/features/ccmp/ccmpReplacementLigatures.mjs
   function getContextParams2(tokens, index) {
     const context = tokens.map((token) => token.activeState.value);
     return new ContextParams(context, index || 0);
@@ -15097,7 +14842,7 @@ var opentype = (() => {
   }
   var ccmpReplacementLigatures_default = ccmpReplacementLigatures;
 
-  // src/features/latn/contextCheck/latinWord.js
+  // src/features/latn/contextCheck/latinWord.mjs
   function latinWordStartCheck(contextParams) {
     const char = contextParams.current;
     const prevChar = contextParams.get(-1);
@@ -15120,7 +14865,7 @@ var opentype = (() => {
     endCheck: latinWordEndCheck
   };
 
-  // src/features/latn/latinLigatures.js
+  // src/features/latn/latinLigatures.mjs
   function getContextParams3(tokens, index) {
     const context = tokens.map((token) => token.activeState.value);
     return new ContextParams(context, index || 0);
@@ -15147,7 +14892,7 @@ var opentype = (() => {
   }
   var latinLigatures_default = latinLigature;
 
-  // src/features/thai/contextCheck/thaiWord.js
+  // src/features/thai/contextCheck/thaiWord.mjs
   function thaiWordStartCheck(contextParams) {
     const char = contextParams.current;
     const prevChar = contextParams.get(-1);
@@ -15170,7 +14915,7 @@ var opentype = (() => {
     endCheck: thaiWordEndCheck
   };
 
-  // src/features/thai/thaiGlyphComposition.js
+  // src/features/thai/thaiGlyphComposition.mjs
   function getContextParams4(tokens, index) {
     const context = tokens.map((token) => token.activeState.value);
     return new ContextParams(context, index || 0);
@@ -15197,7 +14942,7 @@ var opentype = (() => {
   }
   var thaiGlyphComposition_default = thaiGlyphComposition;
 
-  // src/features/thai/thaiLigatures.js
+  // src/features/thai/thaiLigatures.mjs
   function getContextParams5(tokens, index) {
     const context = tokens.map((token) => token.activeState.value);
     return new ContextParams(context, index || 0);
@@ -15224,7 +14969,7 @@ var opentype = (() => {
   }
   var thaiLigatures_default = thaiLigatures;
 
-  // src/features/thai/thaiRequiredLigatures.js
+  // src/features/thai/thaiRequiredLigatures.mjs
   function getContextParams6(tokens, index) {
     const context = tokens.map((token) => token.activeState.value);
     return new ContextParams(context, index || 0);
@@ -15251,10 +14996,9 @@ var opentype = (() => {
   }
   var thaiRequiredLigatures_default = thaiRequiredLigatures;
 
-  // src/features/unicode/contextCheck/variationSequenceCheck.js
+  // src/features/unicode/contextCheck/variationSequenceCheck.mjs
   function isVariationSequenceSelector(char) {
-    if (char === null)
-      return false;
+    if (char === null) return false;
     const charCode = char.codePointAt(0);
     return (
       // Mongolian Variation Selectors
@@ -15277,7 +15021,7 @@ var opentype = (() => {
     endCheck: unicodeVariationSequenceEndCheck
   };
 
-  // src/features/unicode/variationSequences.js
+  // src/features/unicode/variationSequences.mjs
   function unicodeVariationSequence(range) {
     const font = this.query.font;
     const tokens = this.tokenizer.getRangeTokens(range);
@@ -15301,7 +15045,7 @@ var opentype = (() => {
   }
   var variationSequences_default = unicodeVariationSequence;
 
-  // src/bidi.js
+  // src/bidi.mjs
   function Bidi(baseDir) {
     this.baseDir = baseDir || "ltr";
     this.tokenizer = new tokenizer_default();
@@ -15358,16 +15102,13 @@ var opentype = (() => {
     }
   };
   Bidi.prototype.applyFeatures = function(font, features) {
-    if (!font)
-      throw new Error(
-        "No valid font was provided to apply features"
-      );
-    if (!this.query)
-      this.query = new featureQuery_default(font);
+    if (!font) throw new Error(
+      "No valid font was provided to apply features"
+    );
+    if (!this.query) this.query = new featureQuery_default(font);
     for (let f = 0; f < features.length; f++) {
       const feature = features[f];
-      if (!this.query.supports({ script: feature.script }))
-        continue;
+      if (!this.query.supports({ script: feature.script })) continue;
       this.registerFeatures(feature.script, feature.tags);
     }
   };
@@ -15383,8 +15124,7 @@ var opentype = (() => {
   }
   function applyArabicPresentationForms() {
     const script = "arab";
-    if (!Object.prototype.hasOwnProperty.call(this.featuresTags, script))
-      return;
+    if (!Object.prototype.hasOwnProperty.call(this.featuresTags, script)) return;
     checkGlyphIndexStatus.call(this);
     const ranges = this.tokenizer.getContextRanges("arabicWord");
     for (let i = 0; i < ranges.length; i++) {
@@ -15401,8 +15141,7 @@ var opentype = (() => {
     }
   }
   function applyArabicRequireLigatures() {
-    if (!this.hasFeatureEnabled("arab", "rlig"))
-      return;
+    if (!this.hasFeatureEnabled("arab", "rlig")) return;
     checkGlyphIndexStatus.call(this);
     const ranges = this.tokenizer.getContextRanges("arabicWord");
     for (let i = 0; i < ranges.length; i++) {
@@ -15411,8 +15150,7 @@ var opentype = (() => {
     }
   }
   function applyLatinLigatures() {
-    if (!this.hasFeatureEnabled("latn", "liga"))
-      return;
+    if (!this.hasFeatureEnabled("latn", "liga")) return;
     checkGlyphIndexStatus.call(this);
     const ranges = this.tokenizer.getContextRanges("latinWord");
     for (let i = 0; i < ranges.length; i++) {
@@ -15432,12 +15170,9 @@ var opentype = (() => {
     const ranges = this.tokenizer.getContextRanges("thaiWord");
     for (let i = 0; i < ranges.length; i++) {
       const range = ranges[i];
-      if (this.hasFeatureEnabled("thai", "liga"))
-        thaiLigatures_default.call(this, range);
-      if (this.hasFeatureEnabled("thai", "rlig"))
-        thaiRequiredLigatures_default.call(this, range);
-      if (this.hasFeatureEnabled("thai", "ccmp"))
-        thaiGlyphComposition_default.call(this, range);
+      if (this.hasFeatureEnabled("thai", "liga")) thaiLigatures_default.call(this, range);
+      if (this.hasFeatureEnabled("thai", "rlig")) thaiRequiredLigatures_default.call(this, range);
+      if (this.hasFeatureEnabled("thai", "ccmp")) thaiGlyphComposition_default.call(this, range);
     }
   }
   Bidi.prototype.checkContextReady = function(contextId) {
@@ -15483,8 +15218,7 @@ var opentype = (() => {
     let indexes = [];
     for (let i = 0; i < this.tokenizer.tokens.length; i++) {
       const token = this.tokenizer.tokens[i];
-      if (token.state.deleted)
-        continue;
+      if (token.state.deleted) continue;
       const index = token.activeState.value;
       indexes.push(Array.isArray(index) ? index[0] : index);
     }
@@ -15492,7 +15226,7 @@ var opentype = (() => {
   };
   var bidi_default = Bidi;
 
-  // src/font.js
+  // src/font.mjs
   function createDefaultNamesInfo(options) {
     return {
       fontFamily: { en: options.familyName || " " },
@@ -15516,11 +15250,11 @@ var opentype = (() => {
     options = options || {};
     options.tables = options.tables || {};
     if (!options.empty) {
-      checkArgument(options.familyName, "When creating a new Font object, familyName is required.");
-      checkArgument(options.styleName, "When creating a new Font object, styleName is required.");
-      checkArgument(options.unitsPerEm, "When creating a new Font object, unitsPerEm is required.");
-      checkArgument(options.ascender, "When creating a new Font object, ascender is required.");
-      checkArgument(options.descender <= 0, "When creating a new Font object, negative descender value is required.");
+      if (!options.familyName) throw "When creating a new Font object, familyName is required.";
+      if (!options.styleName) throw "When creating a new Font object, styleName is required.";
+      if (!options.unitsPerEm) throw "When creating a new Font object, unitsPerEm is required.";
+      if (!options.ascender) throw "When creating a new Font object, ascender is required.";
+      if (options.descender > 0) throw "When creating a new Font object, negative descender value is required.";
       this.names = {};
       this.names.unicode = createDefaultNamesInfo(options);
       this.names.macintosh = createDefaultNamesInfo(options);
@@ -15590,8 +15324,7 @@ var opentype = (() => {
     this._hmtxTableData = {};
     Object.defineProperty(this, "hinting", {
       get: function() {
-        if (this._hinting)
-          return this._hinting;
+        if (this._hinting) return this._hinting;
         if (this.outlinesFormat === "truetype") {
           return this._hinting = new hintingtt_default(this);
         }
@@ -15829,34 +15562,8 @@ var opentype = (() => {
     }
     return buffer;
   };
-  Font.prototype.download = function(fileName) {
-    const familyName = this.getEnglishName("fontFamily");
-    const styleName = this.getEnglishName("fontSubfamily");
-    fileName = fileName || familyName.replace(/\s/g, "") + "-" + styleName + ".otf";
-    const arrayBuffer = this.toArrayBuffer();
-    if (isBrowser()) {
-      window.URL = window.URL || window.webkitURL;
-      if (window.URL) {
-        const dataView = new DataView(arrayBuffer);
-        const blob = new Blob([dataView], { type: "font/opentype" });
-        let link = document.createElement("a");
-        link.href = window.URL.createObjectURL(blob);
-        link.download = fileName;
-        let event = document.createEvent("MouseEvents");
-        event.initEvent("click", true, false);
-        link.dispatchEvent(event);
-      } else {
-        console.warn("Font file could not be downloaded. Try using a different browser.");
-      }
-    } else {
-      const fs = __require("fs");
-      const buffer = Buffer.alloc(arrayBuffer.byteLength);
-      const view = new Uint8Array(arrayBuffer);
-      for (let i = 0; i < buffer.length; ++i) {
-        buffer[i] = view[i];
-      }
-      fs.writeFileSync(fileName, buffer);
-    }
+  Font.prototype.download = function() {
+    console.error("DEPRECATED: platform-specific actions are to be implemented on user-side");
   };
   Font.prototype.fsSelectionValues = {
     ITALIC: 1,
@@ -15920,7 +15627,7 @@ var opentype = (() => {
   };
   var font_default = Font;
 
-  // src/tables/hvar.js
+  // src/tables/hvar.mjs
   function parseHvarTable(data, start) {
     const p = new parse_default.Parser(data, start);
     const tableVersionMajor = p.parseUShort();
@@ -15957,7 +15664,7 @@ var opentype = (() => {
   }
   var hvar_default = { make: makeHvarTable, parse: parseHvarTable };
 
-  // src/tables/gdef.js
+  // src/tables/gdef.mjs
   var attachList = function() {
     return {
       coverage: this.parsePointer(Parser.coverage),
@@ -16013,7 +15720,7 @@ var opentype = (() => {
   }
   var gdef_default = { parse: parseGDEFTable };
 
-  // src/tables/gpos.js
+  // src/tables/gpos.mjs
   var subtableParsers2 = new Array(10);
   subtableParsers2[1] = function parseLookup12() {
     const start = this.offset + this.relativeOffset;
@@ -16133,7 +15840,7 @@ var opentype = (() => {
   }
   var gpos_default = { parse: parseGposTable, make: makeGposTable };
 
-  // src/tables/kern.js
+  // src/tables/kern.mjs
   function parseWindowsKernTable(p) {
     const pairs = {};
     p.skip("uShort");
@@ -16186,7 +15893,7 @@ var opentype = (() => {
   }
   var kern_default = { parse: parseKernTable };
 
-  // src/tables/loca.js
+  // src/tables/loca.mjs
   function parseLocaTable(data, start, numGlyphs, shortVersion) {
     const p = new parse_default.Parser(data, start);
     const parseFn = shortVersion ? p.parseUShort : p.parseULong;
@@ -16202,57 +15909,7 @@ var opentype = (() => {
   }
   var loca_default = { parse: parseLocaTable };
 
-  // src/opentype.js
-  function loadFromFile(path, callback) {
-    __require("fs").readFile(path, function(err, buffer) {
-      if (err) {
-        return callback(err.message);
-      }
-      callback(null, buffer);
-    });
-  }
-  function loadFromUrl(url, callback) {
-    if (typeof XMLHttpRequest !== "undefined") {
-      const request = new XMLHttpRequest();
-      request.open("get", url, true);
-      request.responseType = "arraybuffer";
-      request.onload = function() {
-        if (request.response) {
-          return callback(null, request.response);
-        } else {
-          return callback("Font could not be loaded: " + request.statusText);
-        }
-      };
-      request.onerror = function() {
-        callback("Font could not be loaded");
-      };
-      request.send();
-    } else if (isNode()) {
-      const lib = url.startsWith("https:") ? __require("https") : __require("http");
-      const req = lib.request(url, (res) => {
-        if ((res.statusCode === 301 || res.statusCode === 302) && res.headers.location) {
-          return loadFromUrl(res.headers.location, callback);
-        }
-        res.setEncoding("binary");
-        const chunks = [];
-        res.on("data", (chunk) => {
-          chunks.push(Buffer.from(chunk, "binary"));
-        });
-        res.on("end", () => {
-          const b = Buffer.concat(chunks);
-          const ab = b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
-          callback(null, ab);
-        });
-        res.on("error", (error) => {
-          callback(error, void 0);
-        });
-      });
-      req.on("error", (error) => {
-        callback(error, void 0);
-      });
-      req.end();
-    }
-  }
+  // src/opentype.mjs
   function parseOpenTypeTableEntries(data, numTables) {
     const tableEntries = [];
     let p = 12;
@@ -16581,38 +16238,11 @@ var opentype = (() => {
     font.palettes = new PaletteManager(font);
     return font;
   }
-  function load(url, callback, opt = {}) {
-    const isNode2 = typeof window === "undefined";
-    const loadFn = isNode2 && !opt.isUrl ? loadFromFile : loadFromUrl;
-    return new Promise((resolve, reject) => {
-      loadFn(url, function(err, buffer) {
-        if (err) {
-          if (callback) {
-            return callback(err);
-          } else {
-            reject(err);
-          }
-        }
-        let font;
-        try {
-          font = parseBuffer(buffer, opt);
-        } catch (e) {
-          if (callback) {
-            return callback(e, null);
-          } else {
-            reject(e);
-          }
-        }
-        if (callback) {
-          return callback(null, font);
-        } else {
-          resolve(font);
-        }
-      });
-    });
+  function load() {
+    console.error("DEPRECATED! migrate to: opentype.parse(buffer, opt) See: https://github.com/opentypejs/opentype.js/issues/675");
   }
-  function loadSync(url, opt) {
-    return parseBuffer(__require("fs").readFileSync(url), opt);
+  function loadSync() {
+    console.error('DEPRECATED! migrate to: opentype.parse(require("fs").readFileSync(url), opt)');
   }
   return __toCommonJS(opentype_exports);
 })();

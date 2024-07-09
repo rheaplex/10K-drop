@@ -14,9 +14,10 @@ matter-js: https://github.com/liabru/matter-js
 
 OpenType.js: https://github.com/opentypejs
 
+Note that we use the development version of opentype for access to SVG conversion.
+
 Random: https://artblocks.notion.site/Technical-Requirements-7f9a9aaf39ea4f20b2d5b948cf08d5aa
 
-svgcanvas: https://github.com/zenozeng/svgcanvas
 
 Dependencies
 ------------

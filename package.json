@@ -1,0 +1,40 @@
+{
+  "name": "10k-drop",
+  "version": "1.0.0",
+  "description": "A 10K drop.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "html": "node script/svg.js",
+    "svg": "node script/svg.js",
+    "thumbnail": "node script/thumbnail.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rheaplex/10K-drop.git"
+  },
+  "keywords": [
+    "art",
+    "nft",
+    "drop"
+  ],
+  "author": "Rhea Myers",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/rheaplex/10K-drop/issues"
+  },
+  "homepage": "https://github.com/rheaplex/10K-drop#README.md",
+  "dependencies": {
+    "canvas": "^2.11.2",
+    "matter-js": "^0.20.0",
+    "pathseg": "^1.2.1",
+    "poly-decomp": "^0.3.0",
+    "snapsvg": "^0.5.1",
+    "xmldom": "^0.6.0"
+  },
+  "devDependencies": {
+    "webpack": "^5.92.1",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^5.0.4"
+  }
+}

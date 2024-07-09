@@ -569,3 +569,8 @@ const genStyles = (random, count) => {
   }
   return [backgroundColour, styles];
 };
+
+module.exports = {
+  FONTS,
+  genStyles
+};
