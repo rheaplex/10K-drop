@@ -3,7 +3,7 @@
 SIZE=1024
 DIR="./dist"
 
-for f in `ls $DIR/*.png`; do
+for f in `ls $DIR/*.png | grep -v thumbnail`; do
     outfile=$DIR/`basename -s .png $f`-thumbnail.png
     magick $f -gravity center \
            -thumbnail ${SIZE}x${SIZE}^ \
