@@ -12,13 +12,13 @@ const { renderSvg, serializeSvg } = require("../src/js/svg");
   await initFonts("./src/fonts");
   fs.createReadStream("./src/hashes.csv")
     .pipe(parse({ delimiter: ",", from_line: 2 }))
-    .on("data", async function (row) {
+    .on("data", function (row) {
       if(row[1].length != 64) {
         console.error(`Invalid row: ${row}`);
       }
-      const [ ks, backgroundStyle ] = await initDrop(row[1]);
+      const [ ks, backgroundStyle ] = initDrop(row[1]);
       runSimulationToEnd();
-      let svg = await renderSvg(ks, backgroundStyle);
+      let svg = renderSvg(ks, backgroundStyle);
       fs.writeFileSync(`./dist/${row[0]}.svg`, serializeSvg(svg));
     });
 })();
