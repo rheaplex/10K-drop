@@ -17,7 +17,11 @@ for (let i = 0; i < config.edition; i++) {
     template.replaceAll("{{ID}}", id)
   );
   links.push(
-    `${id}: <a href="./animation/${id}.html">animation</a>&nbsp;-&nbsp;<a href="./image/${id}.png">png</a>&nbsp-&nbsp;<a href="./svg/${id}.svg">svg</a>`
+    `${id}:
+ <a href="./${id}">metadata</a>&nbsp;
+-&nbsp;<a href="./animation/${id}.html">animation</a>&nbsp;
+-&nbsp;<a href="./image/${id}.png">image</a>&nbsp-
+&nbsp;<a href="./svg/${id}.svg">svg</a>`
   );
 }
 
