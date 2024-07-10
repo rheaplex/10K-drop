@@ -10,7 +10,7 @@
     "js": "npx webpack ./src/js/animation-html.js",
     "png": "node script/render-png.js",
     "thumbnail": "script/thumbnail.sh",
-    "all": "node run js && node run svg && node run png && node run thumbnail && node run html"
+    "all": "npm run js && npm run svg && npm run png && npm run thumbnail && npm run html"
   },
   "repository": {
     "type": "git",

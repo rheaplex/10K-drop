@@ -36,16 +36,18 @@ const createRect = (document, ctx, x, y, width, height, fill) => {
   rect.setAttribute("width", width);
   rect.setAttribute("height", height);
   rect.setAttribute("fill", fill);
-  ctx.appendChild(rect);;
+  ctx.appendChild(rect);
+  return rect;
 };
 
 const createCircle = (document, ctx, x, y, radius, fill) => {
-  const rect = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-  rect.setAttribute("cx", x);
-  rect.setAttribute("cy", y);
-  rect.setAttribute("r", radius);
-  rect.setAttribute("fill", fill);
-  ctx.appendChild(rect);;
+  const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  circle.setAttribute("cx", x);
+  circle.setAttribute("cy", y);
+  circle.setAttribute("r", radius);
+  circle.setAttribute("fill", fill);
+  ctx.appendChild(circle);
+  return circle;
 };
 
 const createSVGPattern = (document, defs, kind, fg, bg, width, size) => {
@@ -101,7 +103,7 @@ const createSVGFill = (document, defs, ctx, x, y, width, height, style) => {
     x + width,
     y + height,
     style.direction
-    );
+  );
   let fill;
   let reference;
   switch (style.paint) {
@@ -161,11 +163,11 @@ const renderSvgKs = (document, defs, ctx, ks) => {
   for (const k of ks) {
     const [ w, h ] = kBounds(k);
     const [ fg, fgstr ] = createSVGFill(
-                        document,
-                        defs,
+      document,
+      defs,
       ctx,
-      (- ((FONT_SIZE_BASE - w) / 2)),
-      - FONT_SIZE_BASE / 2,
+      - (FONT_SIZE_BASE - w) / 2 - k.leftOffset,
+      - (FONT_SIZE_BASE - h) / 2,
       FONT_SIZE_BASE,
       FONT_SIZE_BASE,
       k.style.fill
