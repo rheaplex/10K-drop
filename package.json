@@ -5,9 +5,12 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "html": "node script/svg.js",
-    "svg": "node script/svg.js",
-    "thumbnail": "node script/thumbnail.js"
+    "html": "node script/render-html",
+    "svg": "node script/render-svg.js",
+    "js": "npx webpack ./src/js/animation-html.js",
+    "png": "node script/render-png.js",
+    "thumbnail": "script/thumbnail.sh",
+    "all": "node run js && node run svg && node run png && node run thumbnail && node run html"
   },
   "repository": {
     "type": "git",
@@ -26,6 +29,7 @@
   "homepage": "https://github.com/rheaplex/10K-drop#README.md",
   "dependencies": {
     "canvas": "^2.11.2",
+    "csv": "^6.3.9",
     "matter-js": "^0.20.0",
     "pathseg": "^1.2.1",
     "poly-decomp": "^0.3.0",

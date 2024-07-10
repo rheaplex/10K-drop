@@ -1,21 +1,24 @@
-////////////////////////////////////////////////////////////////////////
-// Imports.
-////////////////////////////////////////////////////////////////////////
-
 const fs = require("node:fs");
+const process = require("node:process");
+
+const { parse } = require("csv-parse");
 
 require("../src/js/node");
 
-const { initDrop, runSimulationToEnd } = require("../src/js/drop");
+const { initDrop, initFonts, runSimulationToEnd } = require("../src/js/drop");
 const { renderSvg, serializeSvg } = require("../src/js/svg");
 
-const renderSvgToFile = async (hash) => {
-  const [ ks, backgroundStyle ] = await initDrop(hash, "./src/fonts");
-  runSimulationToEnd();
-  let svg = await renderSvg(ks, backgroundStyle);
-  fs.writeFileSync(`${hash}.svg`, serializeSvg(svg));
-};
-
-(async function () {
-  await renderSvgToFile("0da7883a44a3de97134015120b541c1b12f6ffc313c9dbd95e9edb12551a5e2f");
+(async function() {
+  await initFonts("./src/fonts");
+  fs.createReadStream("./src/hashes.csv")
+    .pipe(parse({ delimiter: ",", from_line: 2 }))
+    .on("data", async function (row) {
+      if(row[1].length != 64) {
+        console.error(`Invalid row: ${row}`);
+      }
+      const [ ks, backgroundStyle ] = await initDrop(row[1]);
+      runSimulationToEnd();
+      let svg = await renderSvg(ks, backgroundStyle);
+      fs.writeFileSync(`./dist/${row[0]}.svg`, serializeSvg(svg));
+    });
 })();

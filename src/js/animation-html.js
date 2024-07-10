@@ -1,10 +1,11 @@
 require("./browser.js");
 
-const { initDrop } = require("./drop");
+const { initDrop, initFonts } = require("./drop");
 const { initCanvas, renderCanvasLoop } = require("./canvas");
 
 (async function main (hash) {
-  const [ ks, backgroundStyle ] = await initDrop(hash, "./fonts");
+  await initFonts( "./fonts");
+  const [ ks, backgroundStyle ] = await initDrop(hash);
   const canvas = await initCanvas(ks, backgroundStyle);
   document.body.appendChild(canvas);
   renderCanvasLoop();

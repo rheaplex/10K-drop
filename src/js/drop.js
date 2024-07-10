@@ -28,18 +28,19 @@ const Engine    = Matter.Engine,
 const NUM_KS = 10;
 
 // Canvas size. 16:9 .
-const WIDTH  = 3840; //1600;
-const HEIGHT = 2160; //900;
+let WIDTH  = 3840; //1600;
+let HEIGHT = 2160; //900;
 
 // How far from the centre along the x-axis to drop the Ks.
-const VARIANCE_MIN = WIDTH / 6;
-const VARIANCE_MAX = WIDTH / 3;
-const VARIANCE     = VARIANCE_MAX - VARIANCE_MIN;
+let VARIANCE_MIN = WIDTH / 6;
+let VARIANCE_MAX = WIDTH / 3;
+let VARIANCE     = VARIANCE_MAX - VARIANCE_MIN;
 
 // The maximum size for the Ks.
 // This can't be too big as we want to make sure that they
 // all fall into the visible area and don't stack offscreen.
-const FONT_SIZE_BASE      = HEIGHT / 2;
+let FONT_SIZE_BASE      = HEIGHT / 2;
+
 // How long to run the physics before stopping and/or saving.
 const RENDER_TIME_SECONDS = 45;
 const NUM_TICKS           = RENDER_TIME_SECONDS * 50;
@@ -72,7 +73,7 @@ const fetchFont = async (file, prefix) => {
 
 // Fetch the fonts we use, in parallel.
 
-const fetchFonts = async (prefix) => {
+const initFonts = async (prefix) => {
   const fontNames = Object.keys(FONTS);
   let result = await Promise.all(
     fontNames.map(async fontName =>
@@ -264,8 +265,13 @@ const runSimulationToEnd = () => {
   }
 };
 
-const initDrop = async (hash, fontPrefix) => {
-  await fetchFonts(fontPrefix);
+const initDrop = (hash, width, height) => {
+  WIDTH          = width || 3840; //1600;
+  HEIGHT         = height || 2160; //900;
+  VARIANCE_MIN   = WIDTH / 6;
+  VARIANCE_MAX   = WIDTH / 3;
+  VARIANCE       = VARIANCE_MAX - VARIANCE_MIN;
+  FONT_SIZE_BASE = HEIGHT / 2;
   rnd = new Random(hash);
   const [ backgroundColour, styles ] = genStyles(rnd, NUM_KS);
   createEngine();
@@ -277,5 +283,6 @@ const initDrop = async (hash, fontPrefix) => {
 module.exports = {
   WIDTH, HEIGHT, FONT_SIZE_BASE, NUM_TICKS,
   textureCellSize, textureElementSize, gradientCoordsForDirection,
-  initDrop, engineTick, kBounds, runSimulationToEnd
+  initFonts, initDrop, engineTick, kBounds, runSimulationToEnd,
+  fonts
 };

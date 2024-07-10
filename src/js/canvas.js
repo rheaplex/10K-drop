@@ -188,7 +188,7 @@ const createOffscreenK = (k) => {
     options,
     k.font
   );
-  ctx.fillRect(w / 2 - 10, (h / 2 - 10) - bOffset, 20, 20);
+  //ctx.fillRect(w / 2 - 10, (h / 2 - 10) - bOffset, 20, 20);
   /*ctx.beginPath();
   ctx.fill = 'none';
   ctx.strokeStyle = 'red';
@@ -270,7 +270,7 @@ const renderCanvasLoop = () => {
   }
 };
 
-const initCanvas = async (theKs, backgroundStyle) => {
+const initCanvas = (theKs, backgroundStyle) => {
   rendering = true;
   ticks = 0;
   ks = theKs;
