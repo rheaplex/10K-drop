@@ -404,14 +404,14 @@ const STROKE_COLOUR_STRATEGIES = {
     .map(i => pickDifferent(random, HUE, [background, fills[i]]))*/
 };
 
-const SCALE_MIN = 0.5;
+const SCALE_MIN = 0.75;
 // The canvas allocated for an offscreen K must be the same max size.
 const SCALE_MAX = 1.0;
 const SCALE_RANGE = SCALE_MAX - SCALE_MIN;
 
 const SCALE_STRATEGIES = {
   "one": (random, count) => Array(count)
-    .fill(1.0),
+    .fill(SCALE_MAX),
 
   "alternating": (random, count) => alternate(
     count,
@@ -547,12 +547,12 @@ const generateProperties = (random, backgroundColour, count) => {
   return [fillColours, strokeColours, strokeWidths, scales, fonts, cases];
 };
 
-const genStyles = (random, count) => {
+const genStyles = (random, config) => {
   const backgroundColour = genBackground(random);
   const [fillColours, strokeColours, strokeWidths, scales, fonts, cases]
-        = generateProperties(random, backgroundColour, count);
+        = generateProperties(random, backgroundColour, config.numKs);
   const styles = [];
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < config.numKs; i++) {
     const style = {
       fill: fillColours[i],
       scale: scales[i],

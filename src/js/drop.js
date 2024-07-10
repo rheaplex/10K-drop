@@ -1,4 +1,4 @@
-/* global TextEncoder fetchUrl */
+/* global fetchUrl createHash */
 
 ////////////////////////////////////////////////////////////////////////
 // Imports
@@ -20,35 +20,11 @@ const Engine    = Matter.Engine,
       Vertices  = Matter.Vertices;
 
 
-//////////////////////////////////////////b//////////////////////////////
-// Configuration constants.
-////////////////////////////////////////////////////////////////////////
-
-// The clue is in the project name.
-const NUM_KS = 10;
-
-// Canvas size. 16:9 .
-let WIDTH  = 3840; //1600;
-let HEIGHT = 2160; //900;
-
-// How far from the centre along the x-axis to drop the Ks.
-let VARIANCE_MIN = WIDTH / 6;
-let VARIANCE_MAX = WIDTH / 3;
-let VARIANCE     = VARIANCE_MAX - VARIANCE_MIN;
-
-// The maximum size for the Ks.
-// This can't be too big as we want to make sure that they
-// all fall into the visible area and don't stack offscreen.
-let FONT_SIZE_BASE      = HEIGHT / 2;
-
-// How long to run the physics before stopping and/or saving.
-const RENDER_TIME_SECONDS = 45;
-const NUM_TICKS           = RENDER_TIME_SECONDS * 50;
-
-
 ////////////////////////////////////////////////////////////////////////
 // State.
 ////////////////////////////////////////////////////////////////////////
+
+let config;
 
 // Our prng.
 let rnd;
@@ -101,7 +77,7 @@ const createEngine = () => {
 // Generate the edges of the canvas for the physics sim.
 const createBounds = () => [
   // Base
-  Bodies.rectangle(WIDTH / 2, HEIGHT + 500, WIDTH, 1000, {
+  Bodies.rectangle(config.width / 2, config.height + 500, config.width, 1000, {
     isStatic: true,
     staticFriction: 200,
     render: { visible: false }
@@ -112,7 +88,7 @@ const createBounds = () => [
     render: { visible: false }
   }),
   // Right
-  Bodies.rectangle(WIDTH + 1, 0, 1, 9999, {
+  Bodies.rectangle(config.width + 1, 0, 1, 9999, {
     isStatic: true,
     render: { visible: false }
   }),
@@ -163,12 +139,12 @@ const kBounds = (k) => {
 const createKs = (styles) => {
   const createdKs = [];
   // Decide how far the Ks should vary from the horizontal centre.
-  let xVariance = VARIANCE_MIN + (rnd.random_dec() * VARIANCE);
-  let xVarianceOrigin = (WIDTH / 2) - (xVariance / 2);
-  for (let i = 0; i < NUM_KS; i++) {
+  let xVariance = config.varianceMin + (rnd.random_dec() * config.variance);
+  let xVarianceOrigin = (config.width / 2) - (xVariance / 2);
+  for (let i = 0; i < config.numKs; i++) {
     const style = styles[i];
     const font = fonts[style.fontName];
-    const fontSize = (FONT_SIZE_BASE * style.scale);
+    const fontSize = (config.fontSizeBase * style.scale);
     const glyph = font.charToGlyph(
       style.case == "uppercase" ? "K" : "k",
       0,
@@ -188,7 +164,7 @@ const createKs = (styles) => {
       glyph,
       xVarianceOrigin + (rnd.random_dec() * xVariance),
       //// Make sure forms don't intersect when we start the physics simulation.
-      - (FONT_SIZE_BASE + (i * (FONT_SIZE_BASE * 2.1))),
+      - (config.fontSizeBase + (i * (config.fontSizeBase * 2.1))),
       glyphUnitScale,
       style
     );
@@ -260,20 +236,15 @@ const engineTick = () => {
 };
 
 const runSimulationToEnd = () => {
-  for (let i = 0; i < NUM_TICKS; i++) {
+  for (let i = 0; i < config.numTicks; i++) {
     engineTick();
   }
 };
 
-const initDrop = (hash, width, height) => {
-  WIDTH          = width || 3840; //1600;
-  HEIGHT         = height || 2160; //900;
-  VARIANCE_MIN   = WIDTH / 6;
-  VARIANCE_MAX   = WIDTH / 3;
-  VARIANCE       = VARIANCE_MAX - VARIANCE_MIN;
-  FONT_SIZE_BASE = HEIGHT / 2;
-  rnd = new Random(hash);
-  const [ backgroundColour, styles ] = genStyles(rnd, NUM_KS);
+const initDrop = async (id, _config) => {
+  config = _config;
+  rnd = new Random(await createHash(id));
+  const [ backgroundColour, styles ] = genStyles(rnd, config);
   createEngine();
   Composite.add(engine.world, createBounds());
   ks = createKs(styles);
@@ -281,7 +252,6 @@ const initDrop = (hash, width, height) => {
 };
 
 module.exports = {
-  WIDTH, HEIGHT, FONT_SIZE_BASE, NUM_TICKS,
   textureCellSize, textureElementSize, gradientCoordsForDirection,
   initFonts, initDrop, engineTick, kBounds, runSimulationToEnd,
   fonts

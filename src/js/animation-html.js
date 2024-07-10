@@ -1,12 +1,15 @@
-require("./browser.js");
+/* global id */
+
+require("./browser");
+const config = require("./config");
 
 const { initDrop, initFonts } = require("./drop");
 const { initCanvas, renderCanvasLoop } = require("./canvas");
 
-(async function main (hash) {
+(async function main (id) {
   await initFonts( "./fonts");
-  const [ ks, backgroundStyle ] = await initDrop(hash);
-  const canvas = await initCanvas(ks, backgroundStyle);
+  const [ ks, backgroundStyle ] = await initDrop(id, config);
+  const canvas = await initCanvas(ks, backgroundStyle, config);
   document.body.appendChild(canvas);
   renderCanvasLoop();
-})(HASH);
+})(id);

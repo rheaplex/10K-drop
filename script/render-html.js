@@ -1,19 +1,29 @@
 const fs = require("node:fs");
 const process = require("node:process");
-const { parse } = require("csv-parse");
+
+require("../src/js/node");
+const config = require("../src/js/config");
 
 const template = fs.readFileSync("./src/template.html").toString();
+const indexTemplate = fs.readFileSync("./src/index-template.html").toString();
 
-fs.createReadStream("./src/hashes.csv")
-  .pipe(parse({ delimiter: ",", from_line: 2 }))
-  .on("data", function (row) {
-    if(row[1].length != 64) {
-      console.error(`Invalid row: ${row}`);
-    }
-    fs.writeFileSync(
-      `./dist/${row[0]}.html`,
-      template
-          .replace("{{ID}}", row[0])
-          .replace("{{HASH}}", row[1])
-    );
-  });
+const links = [];
+
+for (let i = 0; i < config.edition; i++) {
+  const id = config.firstId + i;
+  process.stderr.write(`${id} `);
+  fs.writeFileSync(
+    `./dist/animation/${id}.html`,
+    template.replaceAll("{{ID}}", id)
+  );
+  links.push(
+    `${id}: <a href="./animation/${id}.html">animation</a>&nbsp;-&nbsp;<a href="./image/${id}.png">png</a>&nbsp-&nbsp;<a href="./svg/${id}.svg">svg</a>`
+  );
+}
+
+process.stderr.write("writing index\n");
+
+fs.writeFileSync(
+  `./dist/index.html`,
+  indexTemplate.replace("{{LINKS}}", links.join("<br>\n"))
+);

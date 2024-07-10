@@ -5,7 +5,6 @@
 const { DOMImplementation, DOMParser, XMLSerializer } = require('xmldom');
 
 const {
-  WIDTH, HEIGHT, FONT_SIZE_BASE, NUM_TICKS,
   textureCellSize, textureElementSize, gradientCoordsForDirection,
   engineTick, kBounds
 } = require("./drop");
@@ -21,6 +20,8 @@ const RAD2DEG = 180 / Math.PI;
 ////////////////////////////////////////////////////////////////////////
 // State
 ////////////////////////////////////////////////////////////////////////
+
+let config;
 
 let fillId = 1;
 
@@ -149,12 +150,21 @@ const createSVGFill = (document, defs, ctx, x, y, width, height, style) => {
 };
 
 const renderSvgBackground = (document, defs, ctx, backgroundColour) => {
-  const [ bg, bgstr ] = createSVGFill(document, defs, ctx, 0, 0, WIDTH, HEIGHT, backgroundColour);
+  const [ bg, bgstr ] = createSVGFill(
+    document,
+    defs,
+    ctx,
+    0,
+    0,
+    config.width,
+    config.height,
+    backgroundColour
+  );
   if(backgroundColour.paint == "pattern") {
     // Align pattern to bottom left.
-    bg.setAttribute("patternTransform", `translate(0, ${HEIGHT})`);
+    bg.setAttribute("patternTransform", `translate(0, ${config.height})`);
   }
-  createRect(document, ctx, 0, 0, WIDTH, HEIGHT, bgstr);
+  createRect(document, ctx, 0, 0, config.width, config.height, bgstr);
 };
 
 const renderSvgKs = (document, defs, ctx, ks) => {
@@ -166,10 +176,10 @@ const renderSvgKs = (document, defs, ctx, ks) => {
       document,
       defs,
       ctx,
-      - (FONT_SIZE_BASE - w) / 2 - k.leftOffset,
-      - (FONT_SIZE_BASE - h) / 2,
-      FONT_SIZE_BASE,
-      FONT_SIZE_BASE,
+      - (config.fontSizeBase - w) / 2 - k.leftOffset,
+      - (config.fontSizeBase - h) / 2,
+      config.fontSizeBase,
+      config.fontSizeBase,
       k.style.fill
     );
     if(k.style.fill.paint == "pattern") {
@@ -216,11 +226,15 @@ const renderSvgKs = (document, defs, ctx, ks) => {
 };
 
 const renderSvg = (ks, backgroundColour) => {
-  const document = new DOMImplementation().createDocument('http://www.w3.org/1999/xhtml', 'html', null);
+  const document = new DOMImplementation().createDocument(
+    'http://www.w3.org/1999/xhtml',
+    'html',
+    null
+  );
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute("height", HEIGHT);
-  svg.setAttribute("width", WIDTH);
-  svg.setAttribute("viewBox", `0 0 ${WIDTH} ${HEIGHT}`);
+  svg.setAttribute("height", config.height);
+  svg.setAttribute("width", config.width);
+  svg.setAttribute("viewBox", `0 0 ${config.width} ${config.height}`);
   const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
   svg.appendChild(defs);
   renderSvgBackground(document, defs, svg, backgroundColour);
@@ -233,7 +247,12 @@ const serializeSvg = (svg) => {
   return serializer.serializeToString(svg);
 };
 
+const initSvg = (_config) => {
+  config = _config;
+};
+
 module.exports = {
+  initSvg,
   renderSvg,
   serializeSvg
 };

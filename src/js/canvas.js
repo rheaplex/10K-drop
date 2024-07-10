@@ -3,7 +3,6 @@
 ////////////////////////////////////////////////////////////////////////
 
 const {
-  WIDTH, HEIGHT, FONT_SIZE_BASE, NUM_TICKS,
   textureCellSize, textureElementSize, gradientCoordsForDirection,
   engineTick, kBounds
 } = require("./drop");
@@ -13,6 +12,7 @@ const {
 // State
 ////////////////////////////////////////////////////////////////////////
 
+let config;
 let rendering;
 let ticks;
 let background;
@@ -127,14 +127,14 @@ const createCanvasFill = (ctx, x, y, width, height, style) => {
 };
 
 const createOffscreenBackground = (backgroundColour) => {
-  const canvas = createCanvas(WIDTH, HEIGHT);
+  const canvas = createCanvas(config.width, config.height);
   const ctx = canvas.getContext('2d');
   const fill = createCanvasFill(
     ctx,
     0,
     0,
-    WIDTH,
-    HEIGHT,
+    config.width,
+    config.height,
     backgroundColour
   );
   ctx.fillStyle = fill;
@@ -142,12 +142,12 @@ const createOffscreenBackground = (backgroundColour) => {
     // Align patterns to bottom left.
     // We use width here as cell sizes are square for width.
     // This is applied for gradients as well but has no effect on them.
-    ctx.translate(0, HEIGHT);
+    ctx.translate(0, config.height);
     ctx.beginPath();
-    ctx.fillRect(0, -HEIGHT, WIDTH, HEIGHT);
+    ctx.fillRect(0, -config.height, config.width, config.height);
   } else {
     ctx.beginPath();
-    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    ctx.fillRect(0, 0, config.width, config.height);
   }
   background = canvas;
 };
@@ -159,15 +159,15 @@ const createOffscreenK = (k) => {
   // This is so we fit the canvas properly and match the SVG fill position.
   // Note that we only need the cell offset for the pattern,
   // but we handle it (apply it to no effect) for the gradients as well.
-  const bOffset = canvas.height % textureCellSize(FONT_SIZE_BASE);
+  const bOffset = canvas.height % textureCellSize(config.fontSizeBase);
   const ctx = canvas.getContext('2d');
   const options = {
     fill: createCanvasFill(
       ctx,
-      - (FONT_SIZE_BASE - canvas.width) / 2 - k.leftOffset,
-      - (FONT_SIZE_BASE - canvas.height) / 2 - bOffset,
-      FONT_SIZE_BASE,
-      FONT_SIZE_BASE,
+      - (config.fontSizeBase - canvas.width) / 2 - k.leftOffset,
+      - (config.fontSizeBase - canvas.height) / 2 - bOffset,
+      config.fontSizeBase,
+      config.fontSizeBase,
       k.style.fill
     )
   };
@@ -262,7 +262,7 @@ const renderCanvasLoop = () => {
     engineTick();
     renderCanvas();
     ticks++;
-    if (ticks < NUM_TICKS) {
+    if (ticks < config.numTicks) {
       window.requestAnimationFrame(renderCanvasLoop);
     } else {
       rendering = false;
@@ -270,13 +270,14 @@ const renderCanvasLoop = () => {
   }
 };
 
-const initCanvas = (theKs, backgroundStyle) => {
+const initCanvas = (theKs, backgroundStyle, _config) => {
+  config = _config;
   rendering = true;
   ticks = 0;
   ks = theKs;
   createOffscreenBackground(backgroundStyle);
   createOffscreenKs();
-  canvas = createCanvas(WIDTH, HEIGHT);
+  canvas = createCanvas(config.width, config.height);
   ctx = canvas.getContext("2d");
   return canvas;
 };

@@ -5,12 +5,14 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "dirs": "node script/directory-structure",
     "html": "node script/render-html",
-    "svg": "node script/render-svg.js",
-    "js": "npx webpack ./src/js/animation-html.js",
-    "png": "node script/render-png.js",
-    "thumbnail": "script/thumbnail.sh",
-    "all": "npm run js && npm run svg && npm run png && npm run thumbnail && npm run html"
+    "svg": "node script/render-svg",
+    "js": "npx webpack --output-path ./dist/animation/js/ ./src/js/animation-html",
+    "png": "node script/render-png",
+    "thumbnail": "node script/thumbnail",
+    "metadata": "node script/render-metadata",
+    "all": "npm run dirs && npm run js && npm run svg && npm run png && npm run thumbnail && npm run html && npm run metadata"
   },
   "repository": {
     "type": "git",
@@ -33,6 +35,7 @@
     "matter-js": "^0.20.0",
     "pathseg": "^1.2.1",
     "poly-decomp": "^0.3.0",
+    "sharp": "^0.33.4",
     "snapsvg": "^0.5.1",
     "xmldom": "^0.6.0"
   },
