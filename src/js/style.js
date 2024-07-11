@@ -272,9 +272,9 @@ const colourGradient = (from, to, steps) => {
   const gstep = difference(b[1], a[1]) / steps;
   const bstep = difference(b[2], a[2]) / steps;
   return range(steps).map(i => cssColor(
-    rbase + (rstep * i),
-    gbase + (gstep * i),
-    bbase + (bstep * i)
+    Math.floor(rbase + (rstep * i)),
+    Math.floor(gbase + (gstep * i)),
+    Math.floor(bbase + (bstep * i))
   ));
 };
 

@@ -20,8 +20,9 @@ for (let i = 0; i < config.edition; i++) {
     `${id}:
  <a href="./${id}">metadata</a>&nbsp;
 -&nbsp;<a href="./animation/${id}.html">animation</a>&nbsp;
--&nbsp;<a href="./image/${id}.png">image</a>&nbsp-
-&nbsp;<a href="./svg/${id}.svg">svg</a>`
+-&nbsp;<a href="./image/${id}.png">image</a>&nbsp
+-&nbsp;<a href="./thumbnail/${id}.png">thumbnail</a>&nbsp
+-&nbsp;<a href="./svg/${id}.svg">svg</a>`
   );
 }
 

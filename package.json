@@ -12,6 +12,7 @@
     "png": "node script/render-png",
     "thumbnail": "node script/thumbnail",
     "metadata": "node script/render-metadata",
+    "montage": "feh --index --no-screen-clip --limit-width 2000 --thumb-height 180 --thumb-width 320 --fullscreen --sort mtime --reverse dist/image/*.png",
     "all": "npm run dirs && npm run js && npm run svg && npm run png && npm run thumbnail && npm run html && npm run metadata"
   },
   "repository": {
