@@ -378,6 +378,11 @@ const FILL_COLOUR_STRATEGIES = {
   },
 };
 
+// Make some fills more likely to balance out the general
+// distribution of colour / gradient / pattern strategies.
+const FILL_COLOUR_SKEW
+      = [ "pattern", "pattern", "all the same", "all the same" ];
+
 const STROKE_COLOUR_STRATEGIES = {
   "none": (random, background, fills, count) => false,
 
@@ -512,7 +517,10 @@ const genBackground = (random) => {
 // The style for each K .
 
 const generateProperties = (random, backgroundColour, count) => {
-  const fillColourStrategy = pick(random, Object.keys(FILL_COLOUR_STRATEGIES));
+  const fillColourStrategy = pick(
+    random,
+      FILL_COLOUR_SKEW.concat(Object.keys(FILL_COLOUR_STRATEGIES))
+  );
   const fillColours = FILL_COLOUR_STRATEGIES[fillColourStrategy](
     random,
     backgroundColour,

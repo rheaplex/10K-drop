@@ -6,7 +6,7 @@ const { DOMImplementation, DOMParser, XMLSerializer } = require('xmldom');
 
 const {
   textureCellSize, textureElementSize, gradientCoordsForDirection,
-  engineTick, kBounds
+  directionToAngle, engineTick, kBounds
 } = require("./drop");
 
 
@@ -165,7 +165,11 @@ const renderSvgBackground = (document, defs, ctx, backgroundColour) => {
   );
   if(backgroundColour.paint == "pattern") {
     // Align pattern to bottom left.
-    bg.setAttribute("patternTransform", `translate(0, ${config.height})`);
+    bg.setAttribute(
+      "patternTransform",
+      `translate(0, ${config.height})`
+        + ` rotate(${directionToAngle(backgroundColour.direction)})`
+    );
   }
   createRect(document, ctx, 0, 0, config.width, config.height, bgstr);
 };
@@ -187,7 +191,11 @@ const renderSvgKs = (document, defs, ctx, ks) => {
     );
     if(k.style.fill.paint == "pattern") {
     // Align pattern to bottom left.
-      fg.setAttribute("patternTransform", `translate(${k.leftOffset}, ${h})`);
+      fg.setAttribute(
+        "patternTransform",
+        `translate(${k.leftOffset}, ${h})`
+          + `rotate(${directionToAngle(k.style.fill.direction)})`
+      );
     }
     // Top left to 0, 0 to match canvas image drawing.
     const path = k.glyph.getPath(

@@ -67,7 +67,7 @@ const createCanvasPattern = (ctx, style, fitWithin) => {
     cctx.fillRect(width / 2, 0, width / 2, width / 2);
     break;
   case "stripe":
-    cctx.fillRect(edge, edge, width, size);
+    cctx.fillRect(0, edge, width, size);
     break;
   };
   const fill = ctx.createPattern(canvas, "repeat");

@@ -197,26 +197,56 @@ const gradientCoordsForDirection = (x1, y1, x2, y2, direction) => {
     return { x1: x1, y1: y1, x2: x1, y2: y2 };
     break;
   case "ne":
-    return{ x1: x1, y1: y1, x2: x2, y2: y2 };
+    return { x1: x1, y1: y1, x2: x2, y2: y2 };
     break;
   case "e":
-    return{ x1: x1, y1: y1, x2: x2, y2: y1 };
+    return { x1: x1, y1: y1, x2: x2, y2: y1 };
     break;
   case "se":
-    return{ x1: x1, y1: y2, x2: x2, y2: y1 };
+    return { x1: x1, y1: y2, x2: x2, y2: y1 };
     break;
   case "s":
-    return{ x1: x1, y1: y2, x2: x1, y2: y1 };
+    return { x1: x1, y1: y2, x2: x1, y2: y1 };
     break;
   case "sw":
-    return{ x1: x2, y1: y2, x2: x1, y2: y1 };
+    return { x1: x2, y1: y2, x2: x1, y2: y1 };
     break;
   case "w":
-    return{ x1: x2, y1: y1, x2: x1, y2: y1 };
+    return { x1: x2, y1: y1, x2: x1, y2: y1 };
     break;
   case "nw":
   default:
-    return{ x1: x2, y1: y2, x2: x1, y2: y2 };
+    return { x1: x2, y1: y2, x2: x1, y2: y2 };
+    break;
+  }
+};
+
+const directionToAngle = (direction) => {
+  switch (direction) {
+    case "n":
+    return 0;
+    break;
+  case "ne":
+    return 45;
+    break;
+  case "e":
+    return 90;
+    break;
+  case "se":
+    return 135;
+    break;
+  case "s":
+    return 180;
+    break;
+  case "sw":
+    return 225;
+    break;
+  case "w":
+    return 270;
+    break;
+  case "nw":
+  default:
+    return 315;
     break;
   }
 };
@@ -253,5 +283,5 @@ const initDrop = async (id, _config) => {
 module.exports = {
   textureCellSize, textureElementSize, gradientCoordsForDirection,
   initFonts, initDrop, engineTick, kBounds, runSimulationToEnd,
-  fonts
+  directionToAngle, fonts
 };
