@@ -43,6 +43,8 @@ const createCanvas = (width, height) => {
 const createCanvasPattern = (ctx, style, fitWithin) => {
   const width = textureCellSize(fitWithin);
   const size = textureElementSize(fitWithin);
+  const centre = width / 2;
+  const edge = (width - size) / 2;
   const canvas = createCanvas(width, width);
   const cctx = canvas.getContext('2d');
   cctx.fillStyle = style.with[0];
@@ -52,19 +54,20 @@ const createCanvasPattern = (ctx, style, fitWithin) => {
   cctx.beginPath();
   switch(style.kind) {
   case "spot":
-    cctx.arc(size / 2, (width - size / 2), size / 2, 0, 2 * Math.PI);
+    cctx.arc(centre, centre, size / 2, 0, 2 * Math.PI);
     cctx.fill();
     break;
   case "box":
-    cctx.fillRect(0, width / 2, width / 2, width / 2);
+    cctx.fillRect(edge, edge, size, size);
     break;
   case "check":
+    // We fill the cell, by definition.
     cctx.fillRect(0, width / 2, width / 2, width / 2);
     cctx.beginPath();
     cctx.fillRect(width / 2, 0, width / 2, width / 2);
     break;
   case "stripe":
-    cctx.fillRect(0, width / 2, width, width / 2);
+    cctx.fillRect(edge, edge, width, size);
     break;
   };
   const fill = ctx.createPattern(canvas, "repeat");

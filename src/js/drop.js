@@ -80,6 +80,7 @@ const createBounds = () => [
   Bodies.rectangle(config.width / 2, config.height + 500, config.width, 1000, {
     isStatic: true,
     staticFriction: 200,
+    restitution: 0,
     render: { visible: false }
   }),
   // Left
@@ -107,12 +108,10 @@ const createBody = (glyph, x, y, scale, look) => {
     {
       // Make sure the physics simulations isn't too bouncy/slidey.
       friction: 0.7,
-      density: scale * 10,
-      //frictionStatic: 10,
-      //restitution: 0.2,
-      //slop: 0.0005,
-    },
-    true
+      //mass: scale * 0.1,
+      restitution: 0.1,
+      //slop: 0.05,
+    }
   );
   //Allow for Bodies.fromVertices changing the centre.
   // https://brm.io/matter-js/docs/classes/Bodies.html#method_fromVertices
@@ -222,9 +221,9 @@ const gradientCoordsForDirection = (x1, y1, x2, y2, direction) => {
   }
 };
 
-const textureCellSize = (width) => width / 20;
+const textureCellSize = (width) => width / 16;
 
-const textureElementSize = (width) => width / 30;
+const textureElementSize = (width) => width / 25;
 
 
 ////////////////////////////////////////////////////////////////////////

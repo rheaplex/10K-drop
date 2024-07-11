@@ -188,7 +188,7 @@ const FONTS = {
   "Roboto-mono-regular-400": "RobotoMono-Regular.ttf",
   "Orbitron-Medium-regular-400": "Orbitron-Medium.ttf",
   "cartoon": "MargarineyWords.otf",
-  "roman": "FreeSerif.ttf"
+  //"roman": "FreeSerif.ttf"
 };
 
 const LETTER_CASE = ["uppercase", "lowercase"];

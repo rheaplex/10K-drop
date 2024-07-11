@@ -59,19 +59,22 @@ const createSVGPattern = (document, defs, kind, fg, bg, width, size) => {
   pattern.setAttribute("patternUnits", "userSpaceOnUse");
   pattern.setAttribute("id", `${patternId}`);
   createRect(document, pattern, 0, 0, width, width, bg);
+  const centre = width / 2;
+  const edge = (width - size) / 2;
   switch(kind) {
   case "spot":
-    createCircle(document, pattern, size / 2, (width - size / 2), size / 2, fg);
+    createCircle(document, pattern, centre, centre, size / 2, fg);
     break;
   case "box":
-    createRect(document, pattern, 0, width / 2, width / 2, width / 2, fg);
+    createRect(document, pattern, edge, edge, size, size, fg);
     break;
   case "check":
+    // We fill the cell, by definition.
     createRect(document, pattern, 0, width/2, width / 2, width / 2, fg);
     createRect(document, pattern, width / 2, 0, width / 2, width / 2, fg);
     break;
   case "stripe":
-    createRect(document, pattern, 0, width / 2, width, width / 2, fg);
+    createRect(document, pattern, 0, edge, width, size, fg);
     break;
   };
   defs.appendChild(pattern);
@@ -138,7 +141,7 @@ const createSVGFill = (document, defs, ctx, x, y, width, height, style) => {
       style.with[1],
       style.with[0],
       textureCellSize(width),
-      textureElementSize(width),
+      textureElementSize(width)
     );
     break;
   case "flat":
