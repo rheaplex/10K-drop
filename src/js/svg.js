@@ -184,13 +184,15 @@ const renderSvgKs = (document, defs, ctx, ks) => {
     );
     if(k.style.fill.paint == "pattern") {
     // Align pattern to bottom left.
-      fg.setAttribute("patternTransform", `translate(${0}, ${h})`);
+      fg.setAttribute("patternTransform", `translate(${k.leftOffset}, ${h})`);
     }
     // Top left to 0, 0 to match canvas image drawing.
     const path = k.glyph.getPath(
-      - k.leftOffset,
+      0,
       h,
-      k.size,
+      // Fudge factor to avoid corrupt outlines at arbitrary sizes
+      // for some fonts. No idea.
+      k.size + 0.05,
       {},
       k.font
     ).toSVG({ flipY: false });
@@ -219,7 +221,7 @@ const renderSvgKs = (document, defs, ctx, ks) => {
       "transform",
       `translate(${k.body.position.x}, ${k.body.position.y})`
         + ` rotate(${k.body.angle * RAD2DEG})`
-        + ` translate(${k.offset.x + k.leftOffset}, ${-(h - k.offset.y)})`
+        + ` translate(${k.offset.x}, ${-(h - k.offset.y)})`
     );
     ctx.appendChild(character);
   }
