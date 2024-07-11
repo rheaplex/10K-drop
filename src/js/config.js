@@ -2,7 +2,7 @@ const projectName        = "10K Drop";
 const projectDescription = "A 10K drop.";
 
 const edition            = 200;
-const firstId            = 0;
+const firstId            = 1;
 
 const width              = 7680;
 const height             = 4320;
