@@ -33,6 +33,7 @@
   "dependencies": {
     "canvas": "^2.11.2",
     "csv": "^6.3.9",
+    "dommatrix": "^0.0.3-e",
     "matter-js": "^0.20.0",
     "pathseg": "^1.2.1",
     "poly-decomp": "^0.3.0",

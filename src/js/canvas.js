@@ -1,10 +1,12 @@
+/* global DOMMatrix */
+
 ////////////////////////////////////////////////////////////////////////
 // Imports.
 ////////////////////////////////////////////////////////////////////////
 
 const {
   textureCellSize, textureElementSize, gradientCoordsForDirection,
-  engineTick, kBounds
+  directionToAngle, engineTick, kBounds
 } = require("./drop");
 
 
@@ -140,15 +142,18 @@ const createOffscreenBackground = (backgroundColour) => {
     config.height,
     backgroundColour
   );
-  ctx.fillStyle = fill;
   if (backgroundColour.paint == "pattern") {
-    // Align patterns to bottom left.
-    // We use width here as cell sizes are square for width.
-    // This is applied for gradients as well but has no effect on them.
-    ctx.translate(0, config.height);
+    const matrix = new DOMMatrix()
+    // Align pattern to bottom left.
+          .translate(0, config.height)
+    // Apply pattern rotation.
+          .rotate(directionToAngle(backgroundColour.direction));
+    fill.setTransform(matrix);
+    ctx.fillStyle = fill;
     ctx.beginPath();
-    ctx.fillRect(0, -config.height, config.width, config.height);
+    ctx.fillRect(0, 0, config.width, config.height);
   } else {
+    ctx.fillStyle = fill;
     ctx.beginPath();
     ctx.fillRect(0, 0, config.width, config.height);
   }
@@ -158,22 +163,25 @@ const createOffscreenBackground = (backgroundColour) => {
 const createOffscreenK = (k) => {
   const [ w, h ] = kBounds(k);
   const canvas = createCanvas(w, h);
-  // Line up the fill and the K to the left edge of the canvas.
-  // This is so we fit the canvas properly and match the SVG fill position.
-  // Note that we only need the cell offset for the pattern,
-  // but we handle it (apply it to no effect) for the gradients as well.
-  const bOffset = canvas.height % textureCellSize(config.fontSizeBase);
   const ctx = canvas.getContext('2d');
   const options = {
     fill: createCanvasFill(
       ctx,
       - (config.fontSizeBase - canvas.width) / 2 - k.leftOffset,
-      - (config.fontSizeBase - canvas.height) / 2 - bOffset,
+      - (config.fontSizeBase - canvas.height) / 2,
       config.fontSizeBase,
       config.fontSizeBase,
       k.style.fill
     )
   };
+  //FIXME: move to pattern creation and pass enough information to do so.
+  if (k.style.fill.paint == "pattern") {
+    const matrix = new DOMMatrix()
+    // Note that we don't have to translate, because the path will be drawn
+    // aligned to the canvas's, and therefore our, bottom left.
+          .rotate(directionToAngle(k.style.fill.direction));
+    options.fill.setTransform(matrix);
+  }
   ctx.save();
  // Show centre of canvas to check gradient alignment.
   /*ctx.strokeStyle = "black";
@@ -182,11 +190,10 @@ const createOffscreenK = (k) => {
   ctx.lineTo(w, h / 2);
   ctx.stroke();
   ctx.restore();*/
-  ctx.translate(0, bOffset);
   k.glyph.draw(
     ctx,
     -k.leftOffset,
-    canvas.height - bOffset,
+    canvas.height,
     k.size,
     options,
     k.font

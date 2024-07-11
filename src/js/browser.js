@@ -13,11 +13,15 @@ window.createCanvas = (width, height) => {
   return canvas;
 };
 
-window.createHash = async plaintext => Array.from(
-  new Uint8Array(
-    await window.crypto.subtle.digest(
-      "SHA-256",
-      new TextEncoder().encode(plaintext)
-    )))
-  .map((item) => item.toString(16).padStart(2, "0"))
-  .join("");
+window.createHash = async plaintext => {
+  const buffer = new Int8Array(1);
+  buffer[0] = plaintext;
+  return Array.from(
+    new Uint8Array(
+      await window.crypto.subtle.digest(
+        "SHA-256",
+        buffer
+      )))
+    .map((item) => item.toString(16).padStart(2, "0"))
+    .join("");
+};

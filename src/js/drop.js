@@ -272,6 +272,10 @@ const runSimulationToEnd = () => {
 
 const initDrop = async (id, _config) => {
   config = _config;
+  console.assert(
+    id <= 255,
+    "id must be a uint8 with current hashing code"
+  );
   rnd = new Random(await createHash(id));
   const [ backgroundColour, styles ] = genStyles(rnd, config);
   createEngine();

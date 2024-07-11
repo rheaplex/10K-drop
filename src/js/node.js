@@ -2,7 +2,9 @@
 
 const fs = require("node:fs");
 const { createHash } = require("node:crypto");
-const { createCanvas } = require('canvas');
+const { DOMMatrix, createCanvas } = require('canvas');
+
+globalThis.DOMMatrix = DOMMatrix;
 
 globalThis.createCanvas = createCanvas;
 

@@ -9,7 +9,7 @@ const { initCanvas, renderCanvasLoop } = require("./canvas");
 (async function main (id) {
   await initFonts( "./fonts");
   const [ ks, backgroundStyle ] = await initDrop(id, config);
-  const canvas = await initCanvas(ks, backgroundStyle, config);
+  const canvas = initCanvas(ks, backgroundStyle, config);
   document.body.appendChild(canvas);
   renderCanvasLoop();
 })(id);
