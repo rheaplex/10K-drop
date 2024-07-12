@@ -16,7 +16,7 @@ const { initCanvas, renderCanvas } = require("../src/js/canvas");
     runSimulationToEnd();
     renderCanvas();
     const buffer = canvas.toBuffer();
-    fs.writeFileSync(`./dist/image/${id}.png`, buffer);
+    fs.writeFileSync(`./dist/image/${id}`, buffer);
   }
   process.stderr.write("\n");
 })();

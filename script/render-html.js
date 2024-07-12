@@ -13,20 +13,20 @@ for (let i = 0; i < config.edition; i++) {
   const id = config.firstId + i;
   process.stderr.write(`${id} `);
   fs.writeFileSync(
-    `./dist/animation/${id}.html`,
+    `./dist/animation/${id}`,
     template.replaceAll("{{ID}}", id)
   );
   links.push(
     `${id}:
  <a href="./${id}">metadata</a>&nbsp;
--&nbsp;<a href="./animation/${id}.html">animation</a>&nbsp;
--&nbsp;<a href="./image/${id}.png">image</a>&nbsp
--&nbsp;<a href="./thumbnail/${id}.png">thumbnail</a>&nbsp
--&nbsp;<a href="./svg/${id}.svg">svg</a>`
+-&nbsp;<a href="./animation/${id}">animation</a>&nbsp;
+-&nbsp;<a href="./image/${id}">image</a>&nbsp
+-&nbsp;<a href="./thumbnail/${id}">thumbnail</a>&nbsp
+-&nbsp;<a href="./svg/${id}">svg</a>`
   );
 }
 
-process.stderr.write("writing index\n");
+process.stderr.write("- writing index\n");
 
 fs.writeFileSync(
   `./dist/index.html`,

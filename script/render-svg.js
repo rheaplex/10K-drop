@@ -15,7 +15,7 @@ const { initSvg, renderSvg, serializeSvg } = require("../src/js/svg");
     runSimulationToEnd();
     initSvg(config);
     let svg = renderSvg(ks, backgroundStyle);
-    fs.writeFileSync(`./dist/svg/${id}.svg`, serializeSvg(svg));
+    fs.writeFileSync(`./dist/svg/${id}`, serializeSvg(svg));
   }
   process.stderr.write("\n");
 })();
