@@ -2,12 +2,13 @@ const fs = require("node:fs");
 const process = require("node:process");
 
 require("../src/js/node");
+
 const config = require("../src/js/config");
 const { initDrop, initFonts, runSimulationToEnd } = require("../src/js/drop");
 const { initCanvas, renderCanvas } = require("../src/js/canvas");
 
 (async function () {
-  await initFonts("./src/fonts");
+  await initFonts(config.scriptFontDir);
   for (let i = 0; i < config.edition; i++) {
     const id = config.firstId + i;
     process.stderr.write(`${id} `);

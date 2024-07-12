@@ -9,7 +9,8 @@ globalThis.DOMMatrix = DOMMatrix;
 globalThis.createCanvas = createCanvas;
 
 globalThis.fetchUrl = async (file, prefix) => {
-  return fs.readFileSync(`${prefix}/${file}`).buffer;
+  const buffer = fs.readFileSync(`${prefix}/${file}`);
+  return buffer;
 };
 
 globalThis.createHash = async plaintext => {

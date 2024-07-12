@@ -2,6 +2,7 @@ const fs = require("node:fs");
 const process = require("node:process");
 
 require("../src/js/node");
+
 const config = require("../src/js/config");
 
 const template = fs.readFileSync("./src/template.html").toString();
@@ -13,13 +14,13 @@ for (let i = 0; i < config.edition; i++) {
   const id = config.firstId + i;
   process.stderr.write(`${id} `);
   fs.writeFileSync(
-    `./dist/animation/${id}`,
+    `./dist/animation/${id}.html`,
     template.replaceAll("{{ID}}", id)
   );
   links.push(
     `${id}:
  <a href="./${id}">metadata</a>&nbsp;
--&nbsp;<a href="./animation/${id}">animation</a>&nbsp;
+-&nbsp;<a href="./animation/${id}.html">animation</a>&nbsp;
 -&nbsp;<a href="./image/${id}">image</a>&nbsp
 -&nbsp;<a href="./thumbnail/${id}">thumbnail</a>&nbsp
 -&nbsp;<a href="./svg/${id}">svg</a>`

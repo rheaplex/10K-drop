@@ -1,5 +1,5 @@
 const projectName        = "10K Drop";
-const projectDescription = "A 10K drop.";
+const projectDescription = "A 10K drop that you can own as an NFT. Locked until ETH hits 10KUSD.";
 
 const edition            = 200;
 const firstId            = 1;
@@ -20,6 +20,9 @@ const numKs              = 10;
 const renderTimeSeconds  = 45;
 const numTicks           = renderTimeSeconds * 50;
 
+// Use the full fonts so we aren't dependent on the reduced ones being built.
+const scriptFontDir = "./src/fonts";
+
 module.exports = {
   projectName,
   projectDescription,
@@ -39,5 +42,7 @@ module.exports = {
   renderTimeSeconds,
   numTicks,
 
-  thumbnailSize
+  thumbnailSize,
+
+  scriptFontDir,
 };

@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dirs": "node script/directory-structure",
+    "fonts": "node script/reduce-fonts",
     "html": "node script/render-html",
     "svg": "node script/render-svg",
     "js": "npx webpack --output-path ./dist/animation/js/ ./src/js/animation-html",
@@ -13,7 +14,7 @@
     "thumbnail": "node script/thumbnail",
     "metadata": "node script/render-metadata",
     "montage": "feh --index --no-screen-clip --limit-width 2000 --thumb-height 180 --thumb-width 320 --fullscreen --sort mtime --reverse dist/image/*.png",
-    "all": "npm run dirs && npm run js && npm run svg && npm run png && npm run thumbnail && npm run html && npm run metadata"
+    "all": "npm run dirs && npm run js && npm run fonts && npm run html && npm run svg && npm run png && npm run thumbnail && npm run metadata"
   },
   "repository": {
     "type": "git",
