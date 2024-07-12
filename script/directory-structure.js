@@ -11,6 +11,7 @@ const dirs = [
   `${distdir}/image`,
   `${distdir}/thumbnail`,
   `${distdir}/svg`,
+  `${distdir}/metadata`,
 ];
 
 const maybeCreate = dir => {

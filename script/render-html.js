@@ -19,7 +19,7 @@ for (let i = 0; i < config.edition; i++) {
   );
   links.push(
     `${id}:
- <a href="./${id}">metadata</a>&nbsp;
+ <a href="./metadata/${id}">metadata</a>&nbsp;
 -&nbsp;<a href="./animation/${id}.html">animation</a>&nbsp;
 -&nbsp;<a href="./image/${id}">image</a>&nbsp
 -&nbsp;<a href="./thumbnail/${id}">thumbnail</a>&nbsp
