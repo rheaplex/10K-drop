@@ -181,15 +181,11 @@ const STROKE_WIDTH = [
 ];
 
 // We don't use the font names in CSS so they don't have to be accurate here.
-const FONTS = {
-  //"Alfa-Slab-One-regular-400": "AlfaSlabOne-Regular.ttf",
-  "Merriweather-regular-400": "u-440qyriQwlOrhSvowK_l5Oew.ttf",
-  "Roboto-normal-900": "KFOlCnqEu92Fr1MmYUtvAw.ttf",
-  "Roboto-mono-regular-400": "RobotoMono-Regular.ttf",
-  "Orbitron-Medium-regular-400": "Orbitron-Medium.ttf",
-  "cartoon": "MargarineyWords.otf",
-  //"roman": "FreeSerif.ttf"
-};
+const FONTS = [
+  "NotoSans-Black.ttf", "NotoSans-Bold.ttf", "NotoSans-ExtraBold.ttf",
+  "NotoSans-Medium.ttf", "NotoSans-SemiBold.ttf",
+  "MargarineyWordsBold.ttf"
+];
 
 const LETTER_CASE = ["uppercase", "lowercase"];
 
@@ -500,6 +496,9 @@ const BACKGROUND_STRATEGIES = {
   },
 };
 
+const BACKGROUND_SKEW
+      = [ "single colour", "gradient" ];
+
 
 ////////////////////////////////////////////////////////////////////////
 // Main flow of execution
@@ -508,7 +507,10 @@ const BACKGROUND_STRATEGIES = {
 // The image background colour.
 
 const genBackground = (random) => {
-  const backgroundStrategy = pick(random, Object.keys(BACKGROUND_STRATEGIES));
+  const backgroundStrategy = pick(
+    random,
+    BACKGROUND_SKEW.concat(Object.keys(BACKGROUND_STRATEGIES))
+  );
   const background = BACKGROUND_STRATEGIES[backgroundStrategy](random);
   //console.log([backgroundStrategy, background]);
   return background;

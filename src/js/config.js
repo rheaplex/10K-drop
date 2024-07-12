@@ -6,10 +6,10 @@ const firstId            = 1;
 
 const width              = 7680;
 const height             = 4320;
-const varianceMin        = width / 6;
-const varianceMax        = width / 3;
+const varianceMin        = width / 3;
+const varianceMax        = width / 3.5;
 const variance           = varianceMax - varianceMin;
-const fontSizeBase       = height / 1.6;
+const fontSizeBase       = height / 1.75;
 
 const thumbnailSize      = 3000;
 
