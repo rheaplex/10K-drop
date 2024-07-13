@@ -199,11 +199,11 @@ const createOffscreenK = (k) => {
     k.font
   );
   //ctx.fillRect(w / 2 - 10, (h / 2 - 10) - bOffset, 20, 20);
-  /*ctx.beginPath();
+  ctx.beginPath();
   ctx.fill = 'none';
   ctx.strokeStyle = 'red';
   ctx.lineWidth = 10;
-  ctx.strokeRect(0, bOffset, canvas.width, canvas.height);*/
+  ctx.strokeRect(0, 0, canvas.width, canvas.height);
   k.image = canvas;
 };
 
@@ -220,7 +220,7 @@ const renderCanvas = () => {
       continue;
     }
     // Render the parts of the physics simulation body for debugging.
-    /*for (const part of k.body.parts.slice(1)) {
+    for (const part of k.body.parts.slice(1)) {
       if (!part.render.visible) {
         continue;
       }
@@ -235,9 +235,9 @@ const renderCanvas = () => {
       ctx.fillStyle = 'none';
       ctx.lineWidth = 5;
       ctx.stroke();
-    }*/
+    }
     // Draw glyph for debugging
-    /*ctx.save();
+    ctx.save();
     ctx.translate(
       k.body.position.x,
       k.body.position.y
@@ -251,7 +251,7 @@ const renderCanvas = () => {
       { fill: "orange", strokeWidth: 10 },
       k.font
     );
-    ctx.restore();*/
+    ctx.restore();
     ctx.save();
     ctx.translate(
       k.body.position.x,

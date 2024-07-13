@@ -9,8 +9,8 @@ const { initCanvas, renderCanvas } = require("../src/js/canvas");
 
 (async function () {
   await initFonts(config.scriptFontDir);
-  for (let i = 0; i < config.edition; i++) {
-    const id = config.firstId + i;
+  //for (let i = 0; i < config.edition; i++) {
+  const id = 139;// config.firstId + i;
     process.stderr.write(`${id} `);
     const [ ks, backgroundStyle ] = await initDrop(id, config);
     const canvas = initCanvas(ks, backgroundStyle, config);
@@ -18,6 +18,6 @@ const { initCanvas, renderCanvas } = require("../src/js/canvas");
     renderCanvas();
     const buffer = canvas.toBuffer();
     fs.writeFileSync(`./dist/image/${id}`, buffer);
-  }
+  //}
   process.stderr.write("\n");
 })();

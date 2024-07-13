@@ -201,9 +201,7 @@ const renderSvgKs = (document, defs, ctx, ks) => {
     const path = k.glyph.getPath(
       0,
       h,
-      // Fudge factor to avoid corrupt outlines at arbitrary sizes
-      // for some fonts. No idea.
-      k.size + 0.05,
+      k.size,
       {},
       k.font
     ).toSVG({ flipY: false });

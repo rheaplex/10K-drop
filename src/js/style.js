@@ -497,7 +497,7 @@ const BACKGROUND_STRATEGIES = {
 };
 
 const BACKGROUND_SKEW
-      = [ "single colour", "gradient" ];
+      = [ "single colour", "gradient", "pattern" ];
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -567,7 +567,8 @@ const genStyles = (random, config) => {
       fill: fillColours[i],
       scale: scales[i],
       fontName: fonts[i],
-      case: cases[i]
+      case: cases[i],
+      rotation: random.random_int(0, 359)
     };
     if (strokeColours) {
       style.stroke = strokeColours[i];

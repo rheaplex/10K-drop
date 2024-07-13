@@ -21,6 +21,13 @@ const Engine    = Matter.Engine,
 
 
 ////////////////////////////////////////////////////////////////////////
+// Useful constants.
+////////////////////////////////////////////////////////////////////////
+
+const DEG2RAD = Math.PI / 180;
+
+
+////////////////////////////////////////////////////////////////////////
 // State.
 ////////////////////////////////////////////////////////////////////////
 
@@ -95,14 +102,12 @@ const createBounds = () => [
   }),
 ];
 
-const createBody = (glyph, x, y, scale, look) => {
+const createBody = (glyph, x, y, look) => {
   // We call pathToVertices each time as the results are consumed
   // by the next Vertices function calls..
   const vertices = Vertices.fromPath(glyph.toSVG());
-  // Scale from truetype glyph space to font pixel size.
-  Vertices.scale(vertices, scale, scale);
   const body = Bodies.fromVertices(
-    x,
+    x - (Vertices.centre(vertices).x / 2),
     y,
     vertices,
     {
@@ -113,7 +118,7 @@ const createBody = (glyph, x, y, scale, look) => {
       //slop: 0.05,
     }
   );
-  //Allow for Bodies.fromVertices changing the centre.
+  // Allow for Bodies.fromVertices changing the centre.
   // https://brm.io/matter-js/docs/classes/Bodies.html#method_fromVertices
   const offset = {
     x: body.position.x - body.bounds.min.x,
@@ -130,8 +135,8 @@ const createBody = (glyph, x, y, scale, look) => {
 const kBounds = (k) => {
   const bounds = k.glyph.getBoundingBox();
   return [
-    (bounds.x2 - bounds.x1) * k.glyphUnitScale,
-    (bounds.y2 - bounds.y1) * k.glyphUnitScale
+    (bounds.x2 - bounds.x1),
+    (bounds.y2 - bounds.y1)
   ];
 };
 
@@ -143,30 +148,30 @@ const createKs = (styles) => {
   for (let i = 0; i < config.numKs; i++) {
     const style = styles[i];
     const font = fonts[style.fontName];
-    const fontSize = (config.fontSizeBase * style.scale);
+    const fontSize = Math.floor(config.fontSizeBase * style.scale);
+    // The formula for scaling from truetype units (e.g 0..2048) to
+    // font size units (e.g. 0..72).
+    const glyphUnitScale = 1 / font.unitsPerEm * fontSize;
     const glyph = font.charToGlyph(
       style.case == "uppercase" ? "K" : "k",
       0,
       0,
-      fontSize
+      fontSize * glyphUnitScale
     );
-    // The formula for scaling from truetype units (e.g 0..2048) to
-    // font size units (e.g. 0..72).
-    const glyphUnitScale = 1 / font.unitsPerEm * fontSize;
     // Characters may have left padding. We need to remove this to
     // ensure that the outline origin is 0, 0 .
     // Characters are drawn aligned to their baseline and we are not
     // using characters with descenders, so we don't have to modify
     // the bottom alignment.
-    const leftOffset = glyph.getBoundingBox().x1 * glyphUnitScale;
+    const leftOffset = glyph.getBoundingBox().x1;
     const [ body, offset ] = createBody(
       glyph,
       xVarianceOrigin + (rnd.random_dec() * xVariance),
       //// Make sure forms don't intersect when we start the physics simulation.
       - (config.fontSizeBase + (i * (config.fontSizeBase * 2.1))),
-      glyphUnitScale,
       style
     );
+    Body.setAngle(body, style.rotation * DEG2RAD);
     Composite.add(engine.world, [body]);
     const k = {
       body: body,
@@ -175,7 +180,6 @@ const createKs = (styles) => {
       glyph: glyph,
       style: style,
       leftOffset: leftOffset,
-      glyphUnitScale: glyphUnitScale,
       // The offsets to draw the glyph outlines correctly after all
       // other transformations have been applied.
       // See the comments in this function and in createBody(), above.

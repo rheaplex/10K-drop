@@ -7,9 +7,9 @@ const firstId            = 0;
 const width              = 7680;
 const height             = 4320;
 const varianceMin        = width / 3;
-const varianceMax        = width / 3.5;
+const varianceMax        = width / 2;
 const variance           = varianceMax - varianceMin;
-const fontSizeBase       = height / 1.75;
+const fontSizeBase       = height / 1.8;
 
 const thumbnailSize      = 3000;
 
