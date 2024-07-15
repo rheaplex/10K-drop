@@ -1,5 +1,6 @@
 const projectName        = "10K Drop";
 const projectDescription = "A 10K drop that you can own as an NFT. Locked until ETH hits 10KUSD.";
+const author             = "Rhea Myers";
 
 const edition            = 200;
 const firstId            = 0;
@@ -23,6 +24,7 @@ const numTicks           = renderTimeSeconds * 50;
 module.exports = {
   projectName,
   projectDescription,
+  author,
 
   edition,
   firstId,
