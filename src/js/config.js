@@ -20,9 +20,6 @@ const numKs              = 10;
 const renderTimeSeconds  = 45;
 const numTicks           = renderTimeSeconds * 50;
 
-// Use the full fonts so we aren't dependent on the reduced ones being built.
-const scriptFontDir = "./src/fonts";
-
 module.exports = {
   projectName,
   projectDescription,
@@ -43,6 +40,4 @@ module.exports = {
   numTicks,
 
   thumbnailSize,
-
-  scriptFontDir,
 };

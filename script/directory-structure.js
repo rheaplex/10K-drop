@@ -7,7 +7,6 @@ const dirs = [
   `${distdir}/animation`,
   `${distdir}/animation/js`,
   `${distdir}/animation/css`,
-  `${distdir}/animation/fonts`,
   `${distdir}/image`,
   `${distdir}/thumbnail`,
   `${distdir}/svg`,

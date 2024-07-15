@@ -6,7 +6,7 @@
 
 const {
   textureCellSize, textureElementSize, gradientCoordsForDirection,
-  directionToAngle, engineTick, kBounds
+  directionToAngle, engineTick
 } = require("./drop");
 
 
@@ -160,50 +160,69 @@ const createOffscreenBackground = (backgroundColour) => {
   background = canvas;
 };
 
+const drawK = (ctx, k) => {
+  const scale = k.vertexScale;
+  ctx.beginPath();
+  k.char.instructions.forEach(i => {
+    switch (i.type) {
+    case "M":
+      ctx.moveTo(i.x * scale, i.y * scale);
+      break;
+    case "L":
+      ctx.lineTo(i.x * scale, i.y * scale);
+      break;
+    case "Q":
+      ctx.quadraticCurveTo(
+        i.x1 * scale,
+        i.y1 * scale,
+        i.x * scale,
+        i.y * scale
+      );
+      break;
+    case "Z":
+      ctx.closePath();
+      break;
+    }
+    });
+};
+
 const createOffscreenK = (k) => {
-  const [ w, h ] = kBounds(k);
-  const canvas = createCanvas(w, h);
+  const canvas = createCanvas(
+    k.char.dimensions.w * k.vertexScale,
+    k.char.dimensions.h * k.vertexScale
+  );
   const ctx = canvas.getContext('2d');
-  const options = {
-    fill: createCanvasFill(
-      ctx,
-      - (config.fontSizeBase - canvas.width) / 2 - k.leftOffset,
-      - (config.fontSizeBase - canvas.height) / 2,
-      config.fontSizeBase,
-      config.fontSizeBase,
-      k.style.fill
-    )
-  };
+  const fill = createCanvasFill(
+    ctx,
+    - (config.fontSizeBase - canvas.width) / 2,
+    - (config.fontSizeBase - canvas.height) / 2,
+    config.fontSizeBase,
+    config.fontSizeBase,
+    k.style.fill
+  );
   //FIXME: move to pattern creation and pass enough information to do so.
   if (k.style.fill.paint == "pattern") {
     const matrix = new DOMMatrix()
     // Note that we don't have to translate, because the path will be drawn
     // aligned to the canvas's, and therefore our, bottom left.
           .rotate(directionToAngle(k.style.fill.direction));
-    options.fill.setTransform(matrix);
+    fill.setTransform(matrix);
   }
-  ctx.save();
- // Show centre of canvas to check gradient alignment.
-  /*ctx.strokeStyle = "black";
-  ctx.strokeWidth = 1;
-  ctx.moveTo(0, h / 2);
-  ctx.lineTo(w, h / 2);
-  ctx.stroke();
-  ctx.restore();*/
-  k.glyph.draw(
-    ctx,
-    -k.leftOffset,
-    canvas.height,
-    k.size,
-    options,
-    k.font
-  );
-  //ctx.fillRect(w / 2 - 10, (h / 2 - 10) - bOffset, 20, 20);
+  ctx.fillStyle = fill;
+  drawK(ctx, k);
+  ctx.fill();
+ // Show centre of canvas to check alignment.
+  /*ctx.save();
+  ctx.fillStyle = "black";
   ctx.beginPath();
-  ctx.fill = 'none';
-  ctx.strokeStyle = 'red';
-  ctx.lineWidth = 10;
-  ctx.strokeRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(canvas.width / 2 - 10, canvas.height / 2 - 10, 20, 20);
+  ctx.restore();
+  // Show edge of canvas for debugging.
+  ctx.beginPath();
+  ctx.strokeStyle = 'green';
+  ctx.lineWidth = 20;
+  ctx.beginPath();
+  ctx.strokeRect(0, 0, canvas.width, canvas.height);*/
   k.image = canvas;
 };
 
@@ -219,8 +238,33 @@ const renderCanvas = () => {
     if (! k.body.render.visible) {
       continue;
     }
+    // Draw glyph for debugging.
+    /*ctx.save();
+    actx.translate(
+      k.body.position.x,
+      k.body.position.y
+    );
+    ctx.rotate(k.body.angle);
+    ctx.fillStyle = "green";
+    drawK(ctx, k);
+    ctx.fill();
+    ctx.strokeWidth = 100;
+    ctx.fill();
+    ctx.restore();*/
+    ctx.save();
+    ctx.translate(
+      k.body.position.x,
+      k.body.position.y
+    );
+    ctx.rotate(k.body.angle, 0, 0);
+    ctx.drawImage(
+      k.image,
+      - ((k.image.width /2) - k.offset.x),
+      - ((k.image.height / 2) - k.offset.y),
+    );
+    ctx.restore();
     // Render the parts of the physics simulation body for debugging.
-    for (const part of k.body.parts.slice(1)) {
+    /*for (const part of k.body.parts) {
       if (!part.render.visible) {
         continue;
       }
@@ -231,39 +275,15 @@ const renderCanvas = () => {
         ctx.lineTo(part.vertices[j].x, part.vertices[j].y);
       }
       ctx.lineTo(vertices[0].x, vertices[0].y);
-      ctx.strokeStyle = 'red';
+      ctx.strokeStyle = "red";
       ctx.fillStyle = 'none';
       ctx.lineWidth = 5;
       ctx.stroke();
-    }
-    // Draw glyph for debugging
-    ctx.save();
-    ctx.translate(
-      k.body.position.x,
-      k.body.position.y
-    );
-    ctx.rotate(k.body.angle);
-    k.glyph.draw(
-      ctx,
-      k.offset.x,
-      k.offset.y,
-      k.size,
-      { fill: "orange", strokeWidth: 10 },
-      k.font
-    );
-    ctx.restore();
-    ctx.save();
-    ctx.translate(
-      k.body.position.x,
-      k.body.position.y
-    );
-    ctx.rotate(k.body.angle, 0, 0);
-    ctx.drawImage(
-      k.image,
-      k.offset.x + k.leftOffset,
-      -(k.image.height - k.offset.y)
-    );
-    ctx.restore();
+      }
+    // Render the centre of the body for debugging.
+    ctx.fillStyle = "blue";
+    ctx.beginPath();
+    ctx.fillRect(k.body.position.x, k.body.position.y, 20, 20);*/
   }
 };
 

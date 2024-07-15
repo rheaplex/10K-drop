@@ -10,7 +10,7 @@ globalThis.createCanvas = createCanvas;
 
 globalThis.fetchUrl = async (file, prefix) => {
   const buffer = fs.readFileSync(`${prefix}/${file}`);
-  return buffer;
+  return buffer.buffer;
 };
 
 globalThis.createHash = async plaintext => {

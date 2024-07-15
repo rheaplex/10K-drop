@@ -4,12 +4,10 @@
 // Imports
 ////////////////////////////////////////////////////////////////////////
 
-const decomp = require("poly-decomp");
-const opentype= require("./opentype");
 const Matter = require("matter-js");
 
 const Random = require("./random");
-const { FONTS, genStyles } = require("./style");
+const { genStyles } = require("./style");
 
 // module aliases
 const Engine    = Matter.Engine,
@@ -18,6 +16,8 @@ const Engine    = Matter.Engine,
       Body      = Matter.Body,
       Composite = Matter.Composite,
       Vertices  = Matter.Vertices;
+
+const fonts = require("./fonts");
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -38,42 +38,19 @@ let rnd;
 // The Matter.js engine. We manage its updates manually.
 let engine;
 
-// The opentype.js font objects representing the fonts we use.
-const fonts = {};
 // The Ks to drop. Includes styling, physics simulation, and
 // other useful information.
 // This is a let as we replace it in test.js.
 let ks;
 
-////////////////////////////////////////////////////////////////////////
-// Load resources, create objects.
-////////////////////////////////////////////////////////////////////////
+let currentTick;
 
-const fetchFont = async (file, prefix) => {
-  let data = await fetchUrl(file, prefix);
-  return opentype.parse(data);
-};
-
-// Fetch the fonts we use, in parallel.
-
-const initFonts = async (prefix) => {
-  const fontNames = Object.keys(FONTS);
-  let result = await Promise.all(
-    fontNames.map(async fontName =>
-      fetchFont(FONTS[fontName], prefix)
-    ));
-  for (let i = 0; i < fontNames.length; i++) {
-    fonts[fontNames[i]] = result[i];
-  }
-};
 
 ////////////////////////////////////////////////////////////////////////
 // The physics simulation.
 ////////////////////////////////////////////////////////////////////////
 
 const createEngine = () => {
-  // Support concave body decomposition.
-  Common.setDecomp(decomp);
   engine = Engine.create({
     //constraintIterations: 4,
     //positionIterations: 12,
@@ -102,29 +79,25 @@ const createBounds = () => [
   }),
 ];
 
-const createBody = (glyph, x, y, look) => {
-  // We call pathToVertices each time as the results are consumed
-  // by the next Vertices function calls..
-  const vertices = Vertices.fromPath(glyph.toSVG());
-  const body = Bodies.fromVertices(
-    x - (Vertices.centre(vertices).x / 2),
-    y,
-    vertices,
-    {
-      // Make sure the physics simulations isn't too bouncy/slidey.
-      friction: 0.7,
-      //mass: scale * 0.1,
-      restitution: 0.1,
-      //slop: 0.05,
-    }
+const createBody = (vertexLists, scale) => {
+  const body = Body.create({
+    // Make sure the physics simulations isn't too bouncy/slidey.
+    friction: 0.7,
+    //mass: scale * 0.1,
+    restitution: 0.1,
+    //slop: 0.05,
+  });
+  Body.setParts(
+    body,
+    vertexLists.map(spec => {
+      const part = Body.create();
+      Body.setVertices(part, spec.vertices);
+      Body.setPosition(part, spec.position);
+      return part;
+    })
   );
-  // Allow for Bodies.fromVertices changing the centre.
-  // https://brm.io/matter-js/docs/classes/Bodies.html#method_fromVertices
-  const offset = {
-    x: body.position.x - body.bounds.min.x,
-    y: body.bounds.max.y - body.position.y
-  };
-  return [ body, offset ];
+  Body.scale(body, scale, scale);
+  return body;
 };
 
 
@@ -132,58 +105,47 @@ const createBody = (glyph, x, y, look) => {
 // Ks.
 ////////////////////////////////////////////////////////////////////////
 
-const kBounds = (k) => {
-  const bounds = k.glyph.getBoundingBox();
-  return [
-    (bounds.x2 - bounds.x1),
-    (bounds.y2 - bounds.y1)
-  ];
-};
-
 const createKs = (styles) => {
   const createdKs = [];
   // Decide how far the Ks should vary from the horizontal centre.
-  let xVariance = config.varianceMin + (rnd.random_dec() * config.variance);
-  let xVarianceOrigin = (config.width / 2) - (xVariance / 2);
+  const xVariance = config.varianceMin + (rnd.random_dec() * config.variance);
+  const xVarianceOrigin = (config.width / 2) - (xVariance / 2);
   for (let i = 0; i < config.numKs; i++) {
     const style = styles[i];
-    const font = fonts[style.fontName];
+    const char = fonts[style.fontName][style.case];
     const fontSize = Math.floor(config.fontSizeBase * style.scale);
-    // The formula for scaling from truetype units (e.g 0..2048) to
-    // font size units (e.g. 0..72).
-    const glyphUnitScale = 1 / font.unitsPerEm * fontSize;
-    const glyph = font.charToGlyph(
-      style.case == "uppercase" ? "K" : "k",
-      0,
-      0,
-      fontSize * glyphUnitScale
+    const vertexScale = fontSize * char.glyphUnitScale;
+    const body = createBody(
+      char.vertexLists,
+      vertexScale,
     );
-    // Characters may have left padding. We need to remove this to
-    // ensure that the outline origin is 0, 0 .
-    // Characters are drawn aligned to their baseline and we are not
-    // using characters with descenders, so we don't have to modify
-    // the bottom alignment.
-    const leftOffset = glyph.getBoundingBox().x1;
-    const [ body, offset ] = createBody(
-      glyph,
-      xVarianceOrigin + (rnd.random_dec() * xVariance),
-      //// Make sure forms don't intersect when we start the physics simulation.
-      - (config.fontSizeBase + (i * (config.fontSizeBase * 2.1))),
-      style
+    const offset = {
+      x:
+      // Geometric centre.
+      ((body.bounds.max.x - body.bounds.min.x) / 2)
+      // Minus centre of mass to give difference between them.
+        - (body.position.x - body.bounds.min.x),
+      y: ((body.bounds.max.y - body.bounds.min.y) / 2)
+        - (body.position.y - body.bounds.min.y),
+    };
+    Body.setPosition(
+      body,
+      {
+        x: xVarianceOrigin + (rnd.random_dec() * xVariance),
+        //// Make sure forms don't intersect when we start the physics.
+        y: - (config.fontSizeBase + (i * (config.fontSizeBase * 2.1)))
+      }
     );
+    Body.rotate(body, i);
     Body.setAngle(body, style.rotation * DEG2RAD);
-    Composite.add(engine.world, [body]);
+    Composite.add(engine.world, [ body ]);
+    const xOffset = 0;
     const k = {
-      body: body,
-      font: font,
-      size: fontSize,
-      glyph: glyph,
-      style: style,
-      leftOffset: leftOffset,
-      // The offsets to draw the glyph outlines correctly after all
-      // other transformations have been applied.
-      // See the comments in this function and in createBody(), above.
-      offset: { x: - (offset.x + leftOffset), y: offset.y }
+      body,
+      char,
+      style,
+      vertexScale,
+      offset
     };
     createdKs.push(k);
   }
@@ -266,6 +228,10 @@ const textureElementSize = (width) => width / 25;
 
 const engineTick = () => {
   Engine.update(engine, 16);
+  currentTick++;
+  if (currentTick == Math.floor(config.numTicks * 0.45)) {
+    redropOffscreenKs();
+  }
 };
 
 const runSimulationToEnd = () => {
@@ -278,18 +244,47 @@ const initDrop = async (id, _config) => {
   config = _config;
   console.assert(
     id <= 255,
-    "id must be a uint8 with current hashing code"
+    "id must be a uint8 with current hashing code!"
   );
   rnd = new Random(await createHash(id));
   const [ backgroundColour, styles ] = genStyles(rnd, config);
   createEngine();
   Composite.add(engine.world, createBounds());
   ks = createKs(styles);
+  currentTick = 0;
   return [ ks, backgroundColour ];
+};
+
+const offscreenKs = () => {
+  const offscreen = [];
+  ks.forEach(k => {
+    if (k.body.bounds.max.y < 0) {
+      offscreen.push(k);
+    }
+  });
+  return offscreen;
+};
+
+// If we have any ks offscreen at this point, move them and drop them again
+// in a different position in the hope that they will make their way
+// onscreen before the end of the simulation.
+
+const redropOffscreenKs = () => {
+  let i = 1;
+  offscreenKs().forEach(k => {
+    Body.setPosition(
+    k.body,
+      {
+        x: config.width - k.body.position.x,
+        y: - config.fontSizeBase * i++
+      },
+      false
+    );
+  });
 };
 
 module.exports = {
   textureCellSize, textureElementSize, gradientCoordsForDirection,
-  initFonts, initDrop, engineTick, kBounds, runSimulationToEnd,
-  directionToAngle, fonts
+  initDrop, engineTick, runSimulationToEnd,
+  directionToAngle, offscreenKs
 };

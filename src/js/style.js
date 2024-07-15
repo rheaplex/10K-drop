@@ -440,7 +440,7 @@ const CASE_STRATEGIES = {
   "all lower": (random, count) => Array(count).fill("lowercase"),
 
   "half and half": (random, count) => Array(count)
-    .fill("uppercase", count / 2)
+    .fill("uppercase", 0, count / 2)
     .fill("lowercase", count / 2),
 
   "alternating": (random, count) => alternate(count, "uppercase", "lowercase"),
@@ -450,22 +450,22 @@ const CASE_STRATEGIES = {
 
 const FONT_STRATEGIES = {
   "all the same": (random, count) => Array(count)
-    .fill(pick(random, Object.keys(FONTS))),
+    .fill(pick(random, FONTS)),
 
   "random": (random, count) => range(count)
-    .map(i => pick(random, Object.keys(FONTS))),
+    .map(i => pick(random, FONTS)),
 
   "alternating": (random, count) => alternateChoices(
     random,
     count,
-    Object.keys(FONTS),
+    FONTS,
     []
   ),
 
   "half and half": (random, count) => {
-    const first = pick(random, Object.keys(FONTS));
+    const first = pick(random, FONTS);
     return Array(count).fill(first, 0, count / 2)
-      .fill(pickDifferent(random, Object.keys(FONTS), [first]), count / 2);
+      .fill(pickDifferent(random, FONTS, [ first ]), count / 2);
   }
 };
 
@@ -553,7 +553,8 @@ const generateProperties = (random, backgroundColour, count) => {
     font: fontStrategy,
     case: caseStrategy
   });
-  console.log([fillColours, strokeColours, strokeWidths, scales, fonts, cases]);*/
+  console.log([fillColours, strokeColours, strokeWidths, scales, fonts, cases]);
+  */
   return [fillColours, strokeColours, strokeWidths, scales, fonts, cases];
 };
 

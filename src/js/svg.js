@@ -174,11 +174,37 @@ const renderSvgBackground = (document, defs, ctx, backgroundColour) => {
   createRect(document, ctx, 0, 0, config.width, config.height, bgstr);
 };
 
+const toSvgPath = (k) => {
+  const scale = k.vertexScale;
+  const path = [ `<path d="` ];
+  k.char.instructions.forEach(i => {
+    switch (i.type) {
+    case "M":
+      path.push(`M${i.x * scale} ${i.y * scale}`);
+      break;
+    case "L":
+      path.push(`L${i.x * scale} ${i.y * scale}`);
+      break;
+    case "Q":
+      path.push(
+        `Q ${i.x1 * scale} ${i.y1 * scale} ${i.x * scale} ${i.y * scale}`
+      );
+      break;
+    case "Z":
+      path.push("Z");
+      break;
+    }
+  });
+  path.push(`" />`);
+  return path.join('');
+};
+
 const renderSvgKs = (document, defs, ctx, ks) => {
   const parser = new DOMParser();
   let i = 0;
   for (const k of ks) {
-    const [ w, h ] = kBounds(k);
+    const w = k.char.dimensions.w * k.vertexScale;
+    const h = k.char.dimensions.h * k.vertexScale;
     const [ fg, fgstr ] = createSVGFill(
       document,
       defs,
@@ -193,20 +219,12 @@ const renderSvgKs = (document, defs, ctx, ks) => {
     // Align pattern to bottom left.
       fg.setAttribute(
         "patternTransform",
-        `translate(${k.leftOffset}, ${h})`
+        `translate(${0}, ${h})`
           + `rotate(${directionToAngle(k.style.fill.direction)})`
       );
     }
-    // Top left to 0, 0 to match canvas image drawing.
-    const path = k.glyph.getPath(
-      0,
-      h,
-      k.size,
-      {},
-      k.font
-    ).toSVG({ flipY: false });
     const character = parser.parseFromString(
-      path,
+      toSvgPath(k),
       "image/svg+xml"
     ).firstChild;
     /*
@@ -230,7 +248,7 @@ const renderSvgKs = (document, defs, ctx, ks) => {
       "transform",
       `translate(${k.body.position.x}, ${k.body.position.y})`
         + ` rotate(${k.body.angle * RAD2DEG})`
-        + ` translate(${k.offset.x}, ${-(h - k.offset.y)})`
+        + ` translate(${- ((w / 2) -k.offset.x)}, ${-((h / 2) - k.offset.y)})`
     );
     ctx.appendChild(character);
   }
@@ -255,7 +273,7 @@ const renderSvg = (ks, backgroundColour) => {
 
 const serializeSvg = (svg) => {
   const serializer = new XMLSerializer();
-  return serializer.serializeToString(svg);
+  return `<?xml version="1.0" encoding="utf-8"?>\n` + serializer.serializeToString(svg);
 };
 
 const initSvg = (_config) => {

@@ -1,27 +1,25 @@
 10K Drop
 ========
 
-Own an entire 10K drop. Locked until Eth hits 10kUSD, at which point you can
-drop it.
+By Rhea Myers.
 
-Libraries Used
-==============
+Code is copyright 2024 Myers Studio, Ltd., and licensed under the GNU GPLv3+ .
 
-Primary
--------
+Generated materials *other than code* are placed under CC0 .
 
-matter-js: https://github.com/liabru/matter-js
+Description
+===========
 
-OpenType.js: https://github.com/opentypejs
+Own a 10K drop with a unique aesthetic as an NFT.
 
-Note that we use the development version of opentype for access to SVG conversion.
+Locked until Eth hits 10kUSD once you purchase it.
 
-Random: https://artblocks.notion.site/Technical-Requirements-7f9a9aaf39ea4f20b2d5b948cf08d5aa
+Font Licenses
+=============
 
+OFL.
 
-Dependencies
-------------
+Requirements
+============
 
-pathseg: https://github.com/progers/pathseg
-
-poly-decomp.js: https://github.com/schteppe/poly-decomp.js/
+node, ipfs cli, imagemagick.

@@ -1,7 +1,7 @@
 {
   "name": "10k-drop",
   "version": "1.0.0",
-  "description": "A 10K drop.",
+  "description": "A 10K nft drop.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -14,7 +14,7 @@
     "thumbnail": "node script/thumbnail",
     "metadata": "node script/render-metadata",
     "montage": "feh --index --no-screen-clip --limit-width 2000 --thumb-height 180 --thumb-width 320 --fullscreen --sort mtime --reverse dist/image/*",
-    "all": "npm run dirs && npm run js && npm run fonts && npm run html && npm run svg && npm run png && npm run thumbnail && npm run metadata"
+    "all": "npm run dirs && npm run js && npm run html && npm run svg && npm run png && npm run thumbnail && npm run metadata"
   },
   "repository": {
     "type": "git",
@@ -33,13 +33,11 @@
   "homepage": "https://github.com/rheaplex/10K-drop#README.md",
   "dependencies": {
     "canvas": "^2.11.2",
-    "csv": "^6.3.9",
     "dommatrix": "^0.0.3-e",
     "matter-js": "^0.20.0",
-    "pathseg": "^1.2.1",
+    "opentype.js": "^1.3.4",
     "poly-decomp": "^0.3.0",
     "sharp": "^0.33.4",
-    "snapsvg": "^0.5.1",
     "xmldom": "^0.6.0"
   },
   "devDependencies": {
