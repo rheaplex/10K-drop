@@ -14,13 +14,13 @@ for (let i = 0; i < config.edition; i++) {
   const id = config.firstId + i;
   process.stderr.write(`${id} `);
   fs.writeFileSync(
-    `./dist/animation/${id}.html`,
+    `./dist/animation/${id}`,
     template.replaceAll("{{ID}}", id)
   );
   links.push(
     `${id}:
  <a href="./metadata/${id}">metadata</a>&nbsp;
--&nbsp;<a href="./animation/${id}.html">animation</a>&nbsp;
+-&nbsp;<a href="./animation/${id}">animation</a>&nbsp;
 -&nbsp;<a href="./image/${id}">image</a>&nbsp
 -&nbsp;<a href="./thumbnail/${id}">thumbnail</a>&nbsp
 -&nbsp;<a href="./svg/${id}">svg</a>`

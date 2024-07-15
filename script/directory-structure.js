@@ -22,5 +22,3 @@ const maybeCreate = dir => {
 dirs.forEach(dir => maybeCreate(dir));
 
 fs.copyFileSync("./src/css/drop.css", `./${distdir}/animation/css/drop.css`);
-
-fs.cpSync("./src/fonts", `./${distdir}/animation/fonts`, { recursive: true });

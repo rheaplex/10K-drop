@@ -273,7 +273,8 @@ const renderSvg = (ks, backgroundColour) => {
 
 const serializeSvg = (svg) => {
   const serializer = new XMLSerializer();
-  return `<?xml version="1.0" encoding="utf-8"?>\n` + serializer.serializeToString(svg);
+  return `<?xml version="1.0" encoding="utf-8"?>\n`
+    + serializer.serializeToString(svg);
 };
 
 const initSvg = (_config) => {
