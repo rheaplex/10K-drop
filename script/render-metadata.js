@@ -46,14 +46,14 @@ console.log(
   `HTML5 canvas animation files directory hash: ${animationDirHash}\n`
 );
 
-for (let i = 0; i < config.edition; i++) {
-  const id = config.firstId + i;
+
+const render = (id, title) => {
   process.stderr.write(`${id} `);
   fs.writeFileSync(
     `./dist/metadata/${id}`,
     JSON.stringify(
       {
-        "name": `${config.projectName} ${id}`,
+        "name": `${config.projectName} ${title}`,
         "description": config.projectDescription,
         "author": config.author,
         "image": ipfs(`./dist/image/${id}`),
@@ -64,6 +64,18 @@ for (let i = 0; i < config.edition; i++) {
       2
     )
   );
+};
+
+for (let i = 0; i < config.edition; i++) {
+  const id = config.firstId + i;
+  const title = `${id}`;
+  render(id, title);
+}
+
+for (let i = 0; i < config.ap; i++) {
+  const id = config.edition + i;
+  const title = `${config.apPrefix}${i + 1}`;
+  render(id, title);
 }
 
 process.stderr.write("\n");

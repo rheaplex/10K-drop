@@ -10,21 +10,33 @@ const indexTemplate = fs.readFileSync("./src/index-template.html").toString();
 
 const links = [];
 
-for (let i = 0; i < config.edition; i++) {
-  const id = config.firstId + i;
-  process.stderr.write(`${id} `);
+const render = (id, title) => {
+  process.stderr.write(`${id}(${title}) `);
   fs.writeFileSync(
     `./dist/animation/${id}`,
     template.replaceAll("{{ID}}", id)
+      .replaceAll("{{TITLE}}", title)
   );
   links.push(
-    `${id}:
+    `${title}:
  <a href="./metadata/${id}">metadata</a>&nbsp;
 -&nbsp;<a href="./animation/${id}">animation</a>&nbsp;
 -&nbsp;<a href="./image/${id}">image</a>&nbsp
 -&nbsp;<a href="./thumbnail/${id}">thumbnail</a>&nbsp
 -&nbsp;<a href="./svg/${id}">svg</a>`
   );
+};
+
+for (let i = 0; i < config.edition; i++) {
+  const id = config.firstId + i;
+  const title = `${id}`;
+  render(id, title);
+}
+
+for (let i = 0; i < config.ap; i++) {
+  const id = config.edition + i;
+  const title = `${config.apPrefix}${i + 1}`;
+  render(id, title);
 }
 
 process.stderr.write("- writing index\n");

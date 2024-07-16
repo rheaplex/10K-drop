@@ -12,7 +12,13 @@ const animationPath = "dist/animation";
 const ipfs = extraArgs => {
   const sub = spawnSync(
     "ipfs",
-    [ "add" ]
+    [
+      "add",
+      "--quieter",
+      "--recursive",
+      // For ease of pinning
+      "--wrap-with-directory",
+    ]
       .concat(extraArgs),
     {
       stdio: 'inherit',
@@ -21,28 +27,10 @@ const ipfs = extraArgs => {
       shell: true
     }
   );
-  /*if (sub.status != 0) {
-    throw sub.stderr.toString();
-  }
-  console.log(sub.stdout.toString().trimEnd());*/
 };
 
-console.log("animation.");
-ipfs(
-  [
-    "--quieter",
-    // We need to be able to use relative paths in the html,
-    // so we have to add this wrapped in a directory.
-    "--wrap-with-directory",
-    // We will need the cid for the dir containing the js/css,
-    // as this is how it will be uploaded, to allow for relative
-    // paths to them in the html.
-    "--recursive"
-  ].concat(
-    fs.readdirSync(animationPath)
-      .map(fileName => path.join(animationPath, fileName))
-  )
-);
+console.log("animation");
+ipfs("./dist/animation/*");
 
 console.log("image");
 ipfs(`./dist/image/*`);
