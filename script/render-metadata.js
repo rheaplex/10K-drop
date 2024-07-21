@@ -53,6 +53,11 @@ const render = (id, title) => {
     `./dist/metadata/${id}`,
     JSON.stringify(
       {
+        "attributes": [
+          { trait_type: "Artist", "value": "Rhea Myers" },
+          { trait_type: "Artwork", "value": "10K Drop" },
+          { trait_type: "Year", "value": "2024" },
+        ],
         "name": `${config.projectName} ${title}`,
         "description": config.projectDescription,
         "author": config.author,
@@ -68,7 +73,7 @@ const render = (id, title) => {
 
 for (let i = 0; i < config.edition; i++) {
   const id = config.firstId + i;
-  const title = `${id}`;
+  const title = `${config.editionPrefix}${id}`;
   render(id, title);
 }
 

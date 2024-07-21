@@ -4,8 +4,9 @@ const author             = "Rhea Myers";
 
 const edition            = 200;
 const firstId            = 0;
+const editionPrefix      = "#";
 const ap                 = 10;
-const apPrefix           = "AP ";
+const apPrefix           = "AP";
 
 const width              = 7680;
 const height             = 4320;
@@ -30,6 +31,7 @@ module.exports = {
 
   edition,
   firstId,
+  editionPrefix,
   ap,
   apPrefix,
 

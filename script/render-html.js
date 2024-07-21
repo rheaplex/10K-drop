@@ -29,7 +29,7 @@ const render = (id, title) => {
 
 for (let i = 0; i < config.edition; i++) {
   const id = config.firstId + i;
-  const title = `${id}`;
+  const title = `${config.editionPrefix}${id}`;
   render(id, title);
 }
 
